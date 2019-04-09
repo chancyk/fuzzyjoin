@@ -23,7 +23,7 @@ setup(
     description="Join two tables by a fuzzy comparison of text columns.",
     long_description=readme + '\n\n' + history,
     author="Chancy Kennedy",
-    author_email='kennedychancy+github@gmail.com',
+    author_email='kennedychancy+fuzzyjoin@gmail.com',
     url='https://github.com/chancyk/fuzzyjoin',
     packages=[
         'fuzzyjoin',
