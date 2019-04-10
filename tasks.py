@@ -29,12 +29,17 @@ def tasks_cli():
 @click.command()
 def build():
     this_dir = os.path.dirname(__file__)
+    # Remove build/
     dir_path = os.path.join(this_dir, 'build')
-    print('[INFO] Removing: %s' % dir_path)
-    shutil.rmtree(dir_path)
+    if os.path.exists(dir_path):
+        print('[INFO] Removing: %s' % dir_path)
+        shutil.rmtree(dir_path)
+    # Remove dist/
     dir_path = os.path.join(this_dir, 'dist')
-    print('[INFO] Removing: %s' % dir_path)
-    shutil.rmtree(dir_path)
+    if os.path.exists(dir_path):
+        print('[INFO] Removing: %s' % dir_path)
+        shutil.rmtree(dir_path)
+
     cmd = ['python', 'setup.py', 'sdist', 'bdist_wheel']
     execute_command('Build', cmd)
 
