@@ -1,8 +1,8 @@
 import os
 import csv
-from typing import Iterator, Dict, List
+from typing import Iterator, Dict, List, Any, Optional
 
-import colorama
+import colorama  # type: ignore
 
 colorama.init(autoreset=True)
 
@@ -11,7 +11,7 @@ def iter_csv_as_records(filepath: str) -> Iterator[Dict[str, str]]:
     """Yield each line of `filepath` as a dict using
     the first line as the keys.
     """
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         csv_reader = csv.reader(f)
         header = next(csv_reader)
         for row in csv_reader:
@@ -26,7 +26,7 @@ def load_csv_as_records(filepath: str) -> List[Dict[str, str]]:
     return records
 
 
-def prompt_if_exists(filepath):
+def prompt_if_exists(filepath: str):
     """Prompt the user if `filepath` already exists."""
     if os.path.exists(filepath):
         resp = input(f"[Warn] <{filepath}> already exists. Overwrite it? [y|N]: ")
@@ -34,7 +34,7 @@ def prompt_if_exists(filepath):
             raise Exception("User aborted.")
 
 
-def append_to_stack(stack, item, size):
+def append_to_stack(stack: List[Any], item: Any, size: int) -> List[Any]:
     if len(stack) > 0 and len(stack) < size:
         stack.append(item)
     elif len(stack) > 0:
@@ -46,18 +46,20 @@ def append_to_stack(stack, item, size):
     return stack
 
 
-def color_red(text):
+def color_red(text: str) -> str:
     return colorama.Fore.RED + text + colorama.Fore.RESET
 
 
-def scan_for_token(token, filepath, context_lines):
-    prev_context = []
-    next_context = []
-    with open(filepath, 'r') as file:
+def scan_for_token(
+    token: str, filepath: str, context_lines: int
+) -> Optional[List[str]]:
+    prev_context = []  # type: List[str]
+    next_context = []  # type: List[str]
+    with open(filepath, "r") as file:
         for line in file:
             if token in line:
                 parts = line.split(token, 1)
-                token_line = ''.join([parts[0], color_red(token), parts[1]])
+                token_line = "".join([parts[0], color_red(token), parts[1]])
                 # If we found the token, return the next `size`
                 # lines after it.
                 for i, line_after in enumerate(file, 1):
