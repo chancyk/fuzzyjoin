@@ -74,9 +74,9 @@ def main(
             if multiples_matches:
                 utils.prompt_if_exists(multiples)
                 io.write_matches(multiples_matches, multiples)
-                print("[Info] Wrote multiples: %s" % os.path.abspath(multiples))
+                print("[INFO] Wrote multiples: %s" % os.path.abspath(multiples))
 
-        print("[Info] Wrote: %s" % os.path.abspath(output))
+        print("[INFO] Wrote: %s" % os.path.abspath(output))
     except Exception as e:
         extype, value, tb = sys.exc_info()
         traceback.print_exc()

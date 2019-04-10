@@ -31,7 +31,7 @@ def load_csv_as_records(filepath: str) -> List[Dict[str, str]]:
 def prompt_if_exists(filepath: str):
     """Prompt the user if `filepath` already exists."""
     if os.path.exists(filepath):
-        resp = input(f"[Warn] <{filepath}> already exists. Overwrite it? [y|N]: ")
+        resp = input(f"[WARN] <{filepath}> already exists. Overwrite it? [y|N]: ")
         if resp not in "yY":
             raise Exception("User aborted.")
 

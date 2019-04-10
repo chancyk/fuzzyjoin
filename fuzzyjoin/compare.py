@@ -177,7 +177,7 @@ def inner_join(
         if show_progress:
             t = time.clock()
             if (t - last_time) > 5:
-                print(f"[INFO]: {i} of {table_1_count} : {t:.2f}s")
+                print(f"[INFO] {i} of {table_1_count} : {t:.2f}s")
                 last_time = t
 
     return matches
