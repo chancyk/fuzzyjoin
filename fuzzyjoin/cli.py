@@ -70,7 +70,7 @@ def main(
         utils.prompt_if_exists(output)
         io.write_matches(matches, output)
         if multiples:
-            multiples_matches = compare.get_multiples(id_key_1, matches)
+            multiples_matches = compare.filter_multiples(id_key_1, matches)
             if multiples_matches:
                 utils.prompt_if_exists(multiples)
                 io.write_matches(multiples_matches, multiples)

@@ -218,7 +218,7 @@ def compare_numbers_subset(text_1: str, text_2: str) -> bool:
         return False
 
 
-def get_multiples(id_key: str, matches: List[Match]) -> List[Match]:
+def filter_multiples(id_key: str, matches: List[Match]) -> List[Match]:
     """Returns the list of matches where a left table ID has
     multiple matches in the right table.
     """
