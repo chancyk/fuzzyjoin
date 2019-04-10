@@ -5,10 +5,10 @@ from typing import Callable, List, Iterator, Dict, Set, Tuple
 from collections import defaultdict
 
 try:
-    import editdistance
+    import editdistance  # type: ignore
     levenshtein = editdistance.eval
 
-except Exception as e:
+except Exception:
     print("[INFO]: editdistance not found. Using pylev.")
     import pylev  # type: ignore
     levenshtein = pylev.levenshtein

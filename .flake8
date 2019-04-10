@@ -1,4 +1,4 @@
 [flake8]
-max-line-length = 90
-exclude = tests/*
+max-line-length = 100
+exclude = tests/*, build/*
 max-complexity = 10

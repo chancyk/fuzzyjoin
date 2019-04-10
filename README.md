@@ -39,6 +39,7 @@ TODO
 - Check that the ID is actually unique.
 - Add documentation.
 - Option to rename headers and disambiguate duplicate header names.
+- Simplify the inner_join routine.
 
 
 History

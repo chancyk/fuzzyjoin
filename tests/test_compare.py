@@ -101,7 +101,7 @@ def test_inner_join_multiples():
         threshold=threshold,
         ngram_size=3,
     )
-    multiples = compare.get_multiples(id_key="id", matches=matches)
+    multiples = compare.filter_multiples(id_key="id", matches=matches)
     assert len(multiples) == 4
 
 
