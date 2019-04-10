@@ -144,7 +144,7 @@ def get_multiples(id_key: str, matches: List[Match]) -> List[Match]:
     """
     counts: Dict[str, int] = defaultdict(lambda: 0)
     for match in matches:
-        id = match['record_1'][id_key]
+        id = match["record_1"][id_key]
         counts[id] += 1
 
     multiples_ids = set(id for id, count in counts.items() if count > 1)
@@ -153,7 +153,7 @@ def get_multiples(id_key: str, matches: List[Match]) -> List[Match]:
 
     multiples_matches = []
     for match in matches:
-        if match['record_1'][id_key] in multiples_ids:
+        if match["record_1"][id_key] in multiples_ids:
             multiples_matches.append(match)
 
     return multiples_matches
