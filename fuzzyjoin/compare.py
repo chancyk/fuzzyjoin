@@ -1,17 +1,20 @@
-from typing import Callable, List
+from typing import NewType, Union, Callable, List, Iterator, Dict, Set, Tuple
 from collections import defaultdict
 
-import pylev
+import pylev # type: ignore
+from mypy_extensions import TypedDict
 
 from .collate import default_collate, to_tokens
 
 
-def default_compare(text_1: str, text_2: str, collate_fn: Callable = default_collate):
+Match = TypedDict('Match', {'score': float, 'record_1': Dict, 'record_2': Dict})
+
+
+def default_compare(text_1: str, text_2: str, collate_fn: Callable = default_collate) -> float:
     """Calculate the string difference using `pylev.levenshtein` on
     collated version of :param:`text_1` and :param:`text_2`.
 
-    :meth:`fuzzyjoin.collate.default_collate` will be used
-    if `collate_fn` is not specified.
+    :meth:`fuzzyjoin.collate.default_collate` will be used if `collate_fn` is not specified.
 
     `default_collate` will remove punction and sort the text tokens.
 
@@ -34,14 +37,14 @@ def default_compare(text_1: str, text_2: str, collate_fn: Callable = default_col
 
 
 def index_by_ngrams(
-    records: dict,
+    records: List[Dict],
     ngram_size: int,
     index_key: str,
     id_key: str,
     tx_fn: Callable = default_collate,
-):
+) -> Dict[str, Set[str]]:
     """Collect the IDs from `id_key` of each ngram from field `index_key`."""
-    index = defaultdict(set)
+    index: Dict[str, Set[str]] = defaultdict(set)
     for record in records:
         for ngram in to_ngrams(tx_fn(record[index_key]), ngram_size):
             index[ngram].add(record[id_key])
@@ -49,7 +52,7 @@ def index_by_ngrams(
     return dict(index)
 
 
-def to_ngrams(item: str, ngram_size: int):
+def to_ngrams(item: str, ngram_size: int) -> Iterator[str]:
     """Yield the list of ngrams of size `ngram_size`of each token in `text`.
 
     :yields: str
@@ -59,7 +62,7 @@ def to_ngrams(item: str, ngram_size: int):
             yield ngram
 
 
-def token_to_ngrams(token: str, ngram_size: int):
+def token_to_ngrams(token: str, ngram_size: int) -> Iterator[str]:
     """Yield the list of ngrams of size `ngram_size` from `token` where a token is
     text that does not contain spaces.
 
@@ -85,8 +88,8 @@ def inner_join(
     compare_fn: Callable = default_compare,
     tx_fn_1: Callable = lambda x: x,
     tx_fn_2: Callable = lambda x: x,
-    exclude_fn: Callable = lambda x, y: False,
-):
+    exclude_fn: Callable = lambda x, y: False
+) -> List[Match]:
     """Return only the matched record above `threshold`.
 
     Block the records from `table_2` by ngrams of size `ngram_size`.
@@ -104,8 +107,8 @@ def inner_join(
         table_2, ngram_size, index_key=key_2, id_key=id_key_2, tx_fn=tx_fn_2
     )
 
-    matches = []
-    matched_ids = set()
+    matches: List[Match] = []
+    matched_ids: Set[Tuple[str, str]] = set()
     for i, record_1 in enumerate(table_1):
         text_1 = tx_fn_1(record_1[key_1])
         for ngram in to_ngrams(text_1, ngram_size):

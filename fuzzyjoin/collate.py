@@ -1,4 +1,5 @@
 import re
+from typing import List
 
 
 # Anything but numbers, digits, and spaces.
@@ -9,16 +10,18 @@ RE_NUMBERS = re.compile(r"\d+")
 RE_SPACES = re.compile(r" +")
 
 
-def to_tokens(text):
-    return [x for x in text.split(" ") if x != ""]
+def to_tokens(text: str) -> List[str]:
+    """Split `text` into a list of words or tokens."""
+    return text.split()
 
 
-def to_sorted_tokens(text):
+def to_sorted_tokens(text: str) -> List[str]:
+    """Split `text` into a list of sorted tokens."""
     tokens = to_tokens(text)
     return sorted(tokens)
 
 
-def default_collate(text):
+def default_collate(text: str) -> str:
     """Punctuation is often used a separator, so replace all punctuation with a
     space, and then replace all consecutive spaces with a single space.
 

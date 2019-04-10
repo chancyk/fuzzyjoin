@@ -7,10 +7,11 @@ from . import io
 
 # flake8: noqa
 
+
 @click.command()
 @click.option("-i", "--ids", nargs=2, required=True, help="<left_id> <right_id>")
 @click.option("-f", "--fields", nargs=2, required=True, help="<left_field> <right_field>")
-@click.option("-t", "--threshold", default=0.7, show_default=True, type=click.FLOAT, help="Only return matches above this score.",)
+@click.option("-t", "--threshold", default=0.7, show_default=True, type=click.FLOAT, help="Only return matches above this score.")
 @click.option("-o", "--output", help="File to write the matches to.")
 @click.argument("left_csv", required=True)
 @click.argument("right_csv", required=True)
