@@ -13,32 +13,16 @@ from . import io, utils, compare
 
 @click.command()
 @click.option("-i", "--ids", nargs=2, required=True, help="<left_id> <right_id>")
-@click.option(
-    "-f", "--fields", nargs=2, required=True, help="<left_field> <right_field>"
-)
-@click.option(
-    "-t",
-    "--threshold",
-    default=0.7,
-    show_default=True,
-    type=click.FLOAT,
-    help="Only return matches above this score.",
-)
+@click.option("-f", "--fields", nargs=2, required=True, help="<left_field> <right_field>")
+@click.option("-t", "--threshold", default=0.7, show_default=True, type=click.FLOAT, help="Only return matches above this score.")
 @click.option("-o", "--output", help="File to write the matches to.")
 @click.option("--multiples", help="File to left IDs with multiple matches.")
-@click.option(
-    "--exclude",
-    help="An importable function to exclude matches: fn(left_record, right_record)",
-)
-@click.option(
-    "--collate", help="An importable function to collate the `fields`: fn(text)"
-)
-@click.option(
-    "--no-progress",
-    "no_progress",
-    is_flag=True,
-    help="Do not show comparison progress.",
-)
+@click.option("--exclude", help="An importable function to exclude matches: fn(left_record, right_record)")
+@click.option("--collate", help="An importable function to collate the `fields`: fn(text)")
+@click.option("--numbers-exact", is_flag=True, help="Number order must match exactly.")
+@click.option("--numbers-permutation", is_flag=True, help="Numbers must match but may be out of order.")
+@click.option("--numbers-subset", is_flag=True, help="Numbers must be a subset.")
+@click.option("--no-progress", "no_progress", is_flag=True, help="Do not show comparison progress.",)
 @click.option("--debug", is_flag=True, help="Exit to PDB on exception.")
 @click.argument("left_csv", required=True)
 @click.argument("right_csv", required=True)
@@ -50,6 +34,9 @@ def main(
     multiples,
     exclude,
     collate,
+    numbers_exact,
+    numbers_permutation,
+    numbers_subset,
     no_progress,
     debug,
     left_csv,
@@ -73,6 +60,9 @@ def main(
             tx_fn_2=collate_fn,
             exclude_fn=exclude_fn,
             show_progress=not no_progress,
+            numbers_exact=numbers_exact,
+            numbers_permutation=numbers_permutation,
+            numbers_subset=numbers_subset
         )
         if output is None:
             output = "matches.csv"

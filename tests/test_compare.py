@@ -103,3 +103,28 @@ def test_inner_join_multiples():
     )
     multiples = compare.get_multiples(id_key="id", matches=matches)
     assert len(multiples) == 4
+
+
+def test_compare_numbers_exact():
+    assert compare.compare_numbers_exact('hello 1 2', 'hello 2 1') == False
+    assert compare.compare_numbers_exact('hello 1 2', 'hello 01 2') == True
+    assert compare.compare_numbers_exact('hello 1 2', 'hello 1 2 2') == False
+    assert compare.compare_numbers_exact('hello 1 2', 'hello 1 2 3') == False
+    assert compare.compare_numbers_exact('2 hello 1', 'hello 1 2') == False
+
+
+def test_compare_numbers_permutation():
+    assert compare.compare_numbers_permutation('hello 1 2', 'hello 2 1') == True
+    assert compare.compare_numbers_permutation('hello 1 2', 'hello 01 2') == True
+    assert compare.compare_numbers_permutation('hello 1 2', 'hello 1 2 2') == False
+    assert compare.compare_numbers_permutation('hello 1 2', 'hello 1 2 3') == False
+    assert compare.compare_numbers_permutation('2 hello 1', 'hello 1 2') == True
+
+
+def test_compare_numbers_subset():
+    assert compare.compare_numbers_subset('hello 1 2', 'hello 2 1') == True
+    assert compare.compare_numbers_subset('hello 1 2', 'hello 01 2') == True
+    assert compare.compare_numbers_subset('hello 1 2', 'hello 1 2 2') == True
+    assert compare.compare_numbers_subset('hello 1 2', 'hello 1 2 3') == True
+    assert compare.compare_numbers_subset('2 hello 1', 'hello 1 2') == True
+    assert compare.compare_numbers_subset('3 hello 4', 'hello 3 5') == False

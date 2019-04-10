@@ -1,3 +1,4 @@
+import re
 import time
 
 from typing import Callable, List, Iterator, Dict, Set, Tuple
@@ -18,6 +19,9 @@ from .collate import default_collate, to_tokens
 
 
 Match = TypedDict("Match", {"score": float, "record_1": Dict, "record_2": Dict})
+
+# Consecutive digits.
+RE_NUMBERS = re.compile(r'\d+')
 
 
 def default_compare(
@@ -103,6 +107,9 @@ def inner_join(
     tx_fn_2: Callable = lambda x: x,
     exclude_fn: Callable = lambda x, y: False,
     show_progress: bool = True,
+    numbers_exact: bool = False,
+    numbers_permutation: bool = False,
+    numbers_subset: bool = False
 ) -> List[Match]:
     """Return only the matched record above `threshold`.
 
@@ -115,6 +122,15 @@ def inner_join(
     The default `ngram_size` is 3. Increase this value if join is too slow due
     to large block sizes.
     """
+    num_options = sum(
+        map(
+            lambda x: 1 if x else 0,
+            [numbers_exact, numbers_permutation, numbers_subset]
+        )
+    )
+    if num_options >= 2:
+        raise Exception("Only one numbers option may be selected.")
+
     total = 0
     index_2 = {x[id_key_2]: x for x in table_2}
     ngram_index_2 = index_by_ngrams(
@@ -123,15 +139,16 @@ def inner_join(
 
     last_time = time.clock()
     table_1_count = len(table_1)
-    matches: List[Match] = []
-    matched_ids: Set[Tuple[str, str]] = set()
+    matches = []  # type: List[Match]
+    matched_ids = set()  # type: Set[Tuple[str, str]]
     for i, record_1 in enumerate(table_1):
         text_1 = tx_fn_1(record_1[key_1])
         for ngram in to_ngrams(text_1, ngram_size):
             ngram_block = ngram_index_2.get(ngram, [])
             for id_2 in ngram_block:
+                id_1 = record_1[id_key_1]
                 # If already matched, don't compare again.
-                if (record_1[id_key_1], id_2) in matched_ids:
+                if (id_1, id_2) in matched_ids:
                     continue
 
                 # Don't compare if the exclude_fn returns true.
@@ -141,12 +158,21 @@ def inner_join(
 
                 total += 1
                 text_2 = tx_fn_2(record_2[key_2])
+                if numbers_exact and not compare_numbers_exact(text_1, text_2):
+                    continue
+
+                if numbers_permutation and not compare_numbers_permutation(text_1, text_2):
+                    continue
+
+                if numbers_subset and not compare_numbers_subset(text_1, text_2):
+                    continue
+
                 score = compare_fn(text_1, text_2)
                 if score >= threshold:
                     matches.append(
                         {"score": score, "record_1": record_1, "record_2": record_2}
                     )
-                    matched_ids.add((record_1[id_key_1], record_2[id_key_2]))
+                    matched_ids.add((id_1, id_2))
 
         if show_progress:
             t = time.clock()
@@ -155,6 +181,41 @@ def inner_join(
                 last_time = t
 
     return matches
+
+
+def compare_numbers_exact(text_1: str, text_2: str) -> bool:
+    """Numbers must appear in same order but without leading zeroes."""
+    # Strip leading zeroes from all numbers.
+    numbers_1 = [int(x) for x in RE_NUMBERS.findall(text_1)]
+    numbers_2 = [int(x) for x in RE_NUMBERS.findall(text_2)]
+    if numbers_1 == numbers_2:
+        return True
+    else:
+        return False
+
+
+def compare_numbers_permutation(text_1: str, text_2: str) -> bool:
+    """Numbers match without leading zeroes and independent of order."""
+    # Strip leading zeroes from all numbers.
+    numbers_1 = sorted([int(x) for x in RE_NUMBERS.findall(text_1)])
+    numbers_2 = sorted([int(x) for x in RE_NUMBERS.findall(text_2)])
+    if numbers_1 == numbers_2:
+        return True
+    else:
+        return False
+
+
+def compare_numbers_subset(text_1: str, text_2: str) -> bool:
+    """One set of numbers must be a complete subset of the other
+    without leading zeroes.
+    """
+    # Strip leading zeroes from all numbers.
+    numbers_1 = set([int(x) for x in RE_NUMBERS.findall(text_1)])
+    numbers_2 = set([int(x) for x in RE_NUMBERS.findall(text_2)])
+    if numbers_1.issubset(numbers_2) or numbers_2.issubset(numbers_1):
+        return True
+    else:
+        return False
 
 
 def get_multiples(id_key: str, matches: List[Match]) -> List[Match]:
