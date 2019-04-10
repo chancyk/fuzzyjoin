@@ -9,8 +9,14 @@ Features
 * Ngram blocking to reduce the total number of comparisons.
 * Pure python levenshtein edit distance using [pylev](https://github.com/toastdriven/pylev).
 * Fast levenshtein edit distance using [editdistance](https://github.com/aflc/editdistance).
-  - with: `pip install fuzzyjoin[fast]`
 * License: [MIT](https://opensource.org/licenses/MIT)
+
+
+Installation
+------------
+* Pure python: `pip install fuzzyjoin`
+* Optimized: `pip install fuzzyjoin[fast]`
+
 
 Description
 -----------
@@ -37,6 +43,11 @@ TODO
 
 History
 =======
+
+0.3.2 (2019-04-10)
+------------------
+* Include basic installation instructions.
+
 
 0.3.1 (2019-04-10)
 ------------------
