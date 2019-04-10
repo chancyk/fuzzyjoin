@@ -3,7 +3,7 @@ import os
 
 import click
 
-from . import io
+from . import io, utils, compare
 
 # flake8: noqa
 
@@ -13,9 +13,10 @@ from . import io
 @click.option("-f", "--fields", nargs=2, required=True, help="<left_field> <right_field>")
 @click.option("-t", "--threshold", default=0.7, show_default=True, type=click.FLOAT, help="Only return matches above this score.")
 @click.option("-o", "--output", help="File to write the matches to.")
+@click.option("--multiples", help="File to left IDs with multiple matches.")
 @click.argument("left_csv", required=True)
 @click.argument("right_csv", required=True)
-def main(ids, fields, threshold, output, left_csv, right_csv):
+def main(ids, fields, threshold, output, multiples, left_csv, right_csv):
     """Fuzzy join <left_csv> and <right_csv> by <left_field> and <right_field>."""
     key_1, key_2 = fields
     id_key_1, id_key_2 = ids
@@ -31,10 +32,13 @@ def main(ids, fields, threshold, output, left_csv, right_csv):
     if output is None:
         output = "matches.csv"
 
-    if os.path.exists(output):
-        resp = input(f"[Warn] <{output}> already exists. Overwrite it? [y|N]: ")
-        if resp not in "yY":
-            raise Exception("User aborted.")
-
+    utils.prompt_if_exists(output)
     io.write_matches(matches, output)
+    if multiples:
+        multiples_matches = compare.get_multiples(id_key_1, matches)
+        if multiples_matches:
+            utils.prompt_if_exists(multiples)
+            io.write_matches(multiples_matches, multiples)
+            print("[Info] Wrote multiples: %s" % os.path.abspath(multiples))
+
     print("[Info] Wrote: %s" % os.path.abspath(output))

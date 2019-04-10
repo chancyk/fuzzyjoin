@@ -1,3 +1,4 @@
+import os
 import csv
 from typing import Iterator, Dict, List
 
@@ -19,3 +20,11 @@ def load_csv_as_records(filepath: str) -> List[Dict[str, str]]:
     """
     records = list(iter_csv_as_records(filepath))
     return records
+
+
+def prompt_if_exists(filepath):
+    """Prompt the user if `filepath` already exists."""
+    if os.path.exists(filepath):
+        resp = input(f"[Warn] <{filepath}> already exists. Overwrite it? [y|N]: ")
+        if resp not in "yY":
+            raise Exception("User aborted.")

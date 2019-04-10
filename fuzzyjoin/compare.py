@@ -136,3 +136,24 @@ def inner_join(
                     matched_ids.add((record_1[id_key_1], record_2[id_key_2]))
 
     return matches
+
+
+def get_multiples(id_key: str, matches: List[Match]) -> List[Match]:
+    """Returns the list of matches where a left table ID has
+    multiple matches in the right table.
+    """
+    counts: Dict[str, int] = defaultdict(lambda: 0)
+    for match in matches:
+        id = match['record_1'][id_key]
+        counts[id] += 1
+
+    multiples_ids = set(id for id, count in counts.items() if count > 1)
+    if len(multiples_ids) == 0:
+        return []
+
+    multiples_matches = []
+    for match in matches:
+        if match['record_1'][id_key] in multiples_ids:
+            multiples_matches.append(match)
+
+    return multiples_matches
