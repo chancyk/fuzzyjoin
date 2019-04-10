@@ -1,7 +1,15 @@
 from typing import Callable, List, Iterator, Dict, Set, Tuple
 from collections import defaultdict
 
-import pylev  # type: ignore
+try:
+    import editdistance
+    levenshtein = editdistance.eval
+
+except Exception as e:
+    print("[INFO]: editdistance not found. Using pylev.")
+    import pylev  # type: ignore
+    levenshtein = pylev.levenshtein
+
 from mypy_extensions import TypedDict
 
 from .collate import default_collate, to_tokens
@@ -32,7 +40,7 @@ def default_compare(
     t1_len = len(text_1_c)
     t2_len = len(text_2_c)
     larger = t1_len if t1_len >= t2_len else t2_len
-    delta = pylev.levenshtein(text_1_c, text_2_c)
+    delta = levenshtein(text_1_c, text_2_c)
     if delta >= larger:
         return 0.0
     else:
