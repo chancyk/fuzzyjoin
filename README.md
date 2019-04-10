@@ -3,7 +3,25 @@ fuzzyjoin
 
 Join two tables by a fuzzy comparison of text columns.
 
-* Free software: MIT license
+Features
+--------
+* Command line utility to quickly join CSV files.
+* Ngram blocking to reduce the total number of comparisons.
+* Pure python levenshtein edit distance using [pylev](https://github.com/toastdriven/pylev).
+* License: [MIT](https://opensource.org/licenses/MIT)
+
+Description
+-----------
+The goal of this package is to provide a quick and convenient way to
+join two tables on a pair of text columns, which often contain variations
+of names for the same entity. `fuzzyjoin` satisfies the simple and common case
+of joining by a single column from each table for a small to medium-sized dataset.
+
+For more sophisticated and comprehensive treatments of the topic that will allow
+you to join records using multiple fields, see the packages below:
+
+[dedupe](https://github.com/dedupeio/dedupe)
+[recordlinkage](https://recordlinkage.readthedocs.io/en/latest/about.html)
 
 
 TODO
@@ -18,6 +36,9 @@ TODO
 
 History
 =======
+
+0.3.0 (xxx)
+-----------
 
 0.2.0 (2019-04-09)
 ------------------
