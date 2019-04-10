@@ -8,6 +8,8 @@ Features
 * Command line utility to quickly join CSV files.
 * Ngram blocking to reduce the total number of comparisons.
 * Pure python levenshtein edit distance using [pylev](https://github.com/toastdriven/pylev).
+* Fast levenshtein edit distance using [editdistance](https://github.com/aflc/editdistance).
+  - with: `pip install fuzzyjoin[fast]`
 * License: [MIT](https://opensource.org/licenses/MIT)
 
 Description
@@ -15,13 +17,13 @@ Description
 The goal of this package is to provide a quick and convenient way to
 join two tables on a pair of text columns, which often contain variations
 of names for the same entity. `fuzzyjoin` satisfies the simple and common case
-of joining by a single column from each table for a small to medium-sized dataset.
+of joining by a single column from each table for datasets in the thousands of records.
 
-For more sophisticated and comprehensive treatments of the topic that will allow
+For a more sophisticated and comprehensive treatment of the topic that will allow
 you to join records using multiple fields, see the packages below:
 
-[dedupe](https://github.com/dedupeio/dedupe)
-[recordlinkage](https://recordlinkage.readthedocs.io/en/latest/about.html)
+* [dedupe](https://github.com/dedupeio/dedupe)
+* [recordlinkage](https://recordlinkage.readthedocs.io/en/latest/about.html)
 
 
 TODO
@@ -35,6 +37,11 @@ TODO
 
 History
 =======
+
+0.3.1 (2019-04-10)
+------------------
+* Minor README updates.
+
 
 0.3.0 (2019-04-10)
 ------------------
