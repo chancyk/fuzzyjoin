@@ -1,3 +1,5 @@
+import time
+
 from typing import Callable, List, Iterator, Dict, Set, Tuple
 from collections import defaultdict
 
@@ -100,6 +102,7 @@ def inner_join(
     tx_fn_1: Callable = lambda x: x,
     tx_fn_2: Callable = lambda x: x,
     exclude_fn: Callable = lambda x, y: False,
+    show_progress: bool = True,
 ) -> List[Match]:
     """Return only the matched record above `threshold`.
 
@@ -118,6 +121,8 @@ def inner_join(
         table_2, ngram_size, index_key=key_2, id_key=id_key_2, tx_fn=tx_fn_2
     )
 
+    last_time = time.clock()
+    table_1_count = len(table_1)
     matches: List[Match] = []
     matched_ids: Set[Tuple[str, str]] = set()
     for i, record_1 in enumerate(table_1):
@@ -142,6 +147,12 @@ def inner_join(
                         {"score": score, "record_1": record_1, "record_2": record_2}
                     )
                     matched_ids.add((record_1[id_key_1], record_2[id_key_2]))
+
+        if show_progress:
+            t = time.clock()
+            if (t - last_time) > 5:
+                print(f"[INFO]: {i} of {table_1_count} : {t:.2f}s")
+                last_time = t
 
     return matches
 
