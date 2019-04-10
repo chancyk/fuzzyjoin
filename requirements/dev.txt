@@ -3,3 +3,4 @@ pip
 punch.py
 wheel
 flake8
+mypy
