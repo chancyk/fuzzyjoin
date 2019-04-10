@@ -2,6 +2,10 @@ import os
 import csv
 from typing import Iterator, Dict, List
 
+import colorama
+
+colorama.init(autoreset=True)
+
 
 def iter_csv_as_records(filepath: str) -> Iterator[Dict[str, str]]:
     """Yield each line of `filepath` as a dict using
@@ -28,3 +32,42 @@ def prompt_if_exists(filepath):
         resp = input(f"[Warn] <{filepath}> already exists. Overwrite it? [y|N]: ")
         if resp not in "yY":
             raise Exception("User aborted.")
+
+
+def append_to_stack(stack, item, size):
+    if len(stack) > 0 and len(stack) < size:
+        stack.append(item)
+    elif len(stack) > 0:
+        stack.pop(0)
+        stack.append(item)
+    else:
+        stack.append(item)
+
+    return stack
+
+
+def color_red(text):
+    return colorama.Fore.RED + text + colorama.Fore.RESET
+
+
+def scan_for_token(token, filepath, context_lines):
+    prev_context = []
+    next_context = []
+    with open(filepath, 'r') as file:
+        for line in file:
+            if token in line:
+                parts = line.split(token, 1)
+                token_line = ''.join([parts[0], color_red(token), parts[1]])
+                # If we found the token, return the next `size`
+                # lines after it.
+                for i, line_after in enumerate(file, 1):
+                    next_context.append(line_after)
+                    if i >= context_lines:
+                        break
+
+                return prev_context + [token_line] + next_context
+            else:
+                # Keep the previous `size` lines.
+                append_to_stack(stack=prev_context, item=line, size=context_lines)
+
+    return None

@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 import shutil
 import subprocess
+from pathlib import Path
 
 import click
+
+from fuzzyjoin import utils
 
 # flake8: noqa
 
@@ -21,6 +25,20 @@ def execute_command(cmd_name, cmd):
         print(msg + '\n')
 
 
+def check_for_sentinel(filename):
+    this_dir = os.path.dirname(__file__)
+    filepath = os.path.join(this_dir, filename)
+    context = utils.scan_for_token('xxx', filepath, context_lines=5)
+    if context:
+        msg = f"Sentinel found in {filename}"
+        print()
+        print('=' * len(msg))
+        print(msg)
+        print('=' * len(msg))
+        print(*context)
+        sys.exit(0)
+
+
 @click.group()
 def tasks_cli():
     pass
@@ -36,6 +54,7 @@ def check():
 @click.command()
 def build():
     this_dir = os.path.dirname(__file__)
+    check_for_sentinel('README.md')
     # Remove build/
     dir_path = os.path.join(this_dir, 'build')
     if os.path.exists(dir_path):
