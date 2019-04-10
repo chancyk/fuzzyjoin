@@ -1,20 +1,23 @@
-from typing import NewType, Union, Callable, List, Iterator, Dict, Set, Tuple
+from typing import Callable, List, Iterator, Dict, Set, Tuple
 from collections import defaultdict
 
-import pylev # type: ignore
+import pylev  # type: ignore
 from mypy_extensions import TypedDict
 
 from .collate import default_collate, to_tokens
 
 
-Match = TypedDict('Match', {'score': float, 'record_1': Dict, 'record_2': Dict})
+Match = TypedDict("Match", {"score": float, "record_1": Dict, "record_2": Dict})
 
 
-def default_compare(text_1: str, text_2: str, collate_fn: Callable = default_collate) -> float:
+def default_compare(
+    text_1: str, text_2: str, collate_fn: Callable = default_collate
+) -> float:
     """Calculate the string difference using `pylev.levenshtein` on
     collated version of :param:`text_1` and :param:`text_2`.
 
-    :meth:`fuzzyjoin.collate.default_collate` will be used if `collate_fn` is not specified.
+    :meth:`fuzzyjoin.collate.default_collate` will be
+    used if `collate_fn` is not specified.
 
     `default_collate` will remove punction and sort the text tokens.
 
@@ -88,7 +91,7 @@ def inner_join(
     compare_fn: Callable = default_compare,
     tx_fn_1: Callable = lambda x: x,
     tx_fn_2: Callable = lambda x: x,
-    exclude_fn: Callable = lambda x, y: False
+    exclude_fn: Callable = lambda x, y: False,
 ) -> List[Match]:
     """Return only the matched record above `threshold`.
 
