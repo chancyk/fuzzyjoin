@@ -19,7 +19,7 @@ from . import io, utils, compare
 @click.option("--multiples", help="File to left IDs with multiple matches.")
 @click.option("--exclude", help="An importable function to exclude matches: fn(left_record, right_record)")
 @click.option("--collate", help="An importable function to collate the `fields`: fn(text)")
-@click.option("--numbers-exact", is_flag=True, help="Number order must match exactly.")
+@click.option("--numbers-exact", is_flag=True, help="Numbers and order must match exactly.")
 @click.option("--numbers-permutation", is_flag=True, help="Numbers must match but may be out of order.")
 @click.option("--numbers-subset", is_flag=True, help="Numbers must be a subset.")
 @click.option("--no-progress", "no_progress", is_flag=True, help="Do not show comparison progress.",)
