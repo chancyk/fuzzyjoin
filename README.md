@@ -26,16 +26,23 @@ you to join records using multiple fields, see the packages below:
 
 TODO
 ----
-- [ ] Test transformation and exclude functions.
-- [ ] Implement left join and full join.
-- [ ] Optionally use python-Levenshtein for speed.
-- [ ] Check that the ID is actually unique.
-- [ ] Add documentation.
-- [ ] Option to rename headers and disambiguate duplicate header names.
+- Test transformation and exclude functions.
+- Implement left join and full join.
+- Check that the ID is actually unique.
+- Add documentation.
+- Option to rename headers and disambiguate duplicate header names.
 
 
 History
 =======
+
+0.3.0 (2019-04-10)
+------------------
+* Use editdistance if available, otherwise fallback to pylev.
+* Report progress by default.
+* Number comparison options.
+* Renamed get_multiples to filter_multiples.
+
 
 0.2.1 (2019-04-10)
 ------------------
