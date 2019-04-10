@@ -16,7 +16,7 @@ test_requirements = [
 
 setup(
     name='fuzzyjoin',
-    version='0.3.2',
+    version='0.3.3',
     description="Join two tables by a fuzzy comparison of text columns.",
     long_description=readme,
     author="Chancy Kennedy",

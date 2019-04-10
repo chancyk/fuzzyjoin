@@ -45,10 +45,13 @@ TODO
 History
 =======
 
+0.3.3 (2019-04-10)
+------------------
+* Cleanup checks.
+
 0.3.2 (2019-04-10)
 ------------------
 * Include basic installation instructions.
-
 
 0.3.1 (2019-04-10)
 ------------------
