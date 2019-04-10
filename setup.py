@@ -32,6 +32,9 @@ setup(
             'fuzzyjoin=fuzzyjoin.cli:main'
         ]
     },
+    extras_require={
+        'fast': ["editdistance>=0.5.3,<0.6.0"]
+    },
     include_package_data=True,
     install_requires=requirements,
     license="MIT license",
