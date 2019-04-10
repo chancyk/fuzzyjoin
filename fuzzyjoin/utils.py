@@ -1,5 +1,7 @@
 import os
 import csv
+import sys
+import importlib
 from typing import Iterator, Dict, List, Any, Optional
 
 import colorama  # type: ignore
@@ -73,3 +75,12 @@ def scan_for_token(
                 append_to_stack(stack=prev_context, item=line, size=context_lines)
 
     return None
+
+
+def import_function(fq_module_path: str):
+    sys.path.insert(0, "")
+    module_path, function_name = fq_module_path.rsplit(".", 1)
+    module = importlib.import_module(module_path)
+    function = getattr(module, function_name)
+    sys.path.pop(0)
+    return function
