@@ -16,10 +16,15 @@ def test_default_compare():
         id_key_1="id",
         id_key_2="id"
     )
-    assert 1.0 == compare.default_compare("string", "string", options)[-1]['score']
-    assert 1.0 == compare.default_compare("hello world", "world-hello.", options)[-1]['score']
-    assert 0.8 == compare.default_compare("hello", "hell", options)[-1]['score']
-    assert 0.0 == compare.default_compare("hello", "zzzzz", options)[-1]['score']
+    def do_compare(text_1, text_2):
+        r1 = {'text': text_1}
+        r2 = {'text': text_2}
+        return compare.default_compare(r1, r2, options)[-1]['score']
+
+    assert 1.0 == do_compare("string", "string")
+    assert 1.0 == do_compare("hello world", "world-hello.")
+    assert 0.8 == do_compare("hello", "hell")
+    assert 0.0 == do_compare("hello", "zzzzz")
 
 
 def test_ngrams():
@@ -116,25 +121,43 @@ def test_inner_join_multiples():
 
 
 def test_compare_numbers_exact():
-    assert compare.compare_numbers_exact('hello 1 2', 'hello 2 1')['pass'] == False
-    assert compare.compare_numbers_exact('hello 1 2', 'hello 01 2')['pass'] == True
-    assert compare.compare_numbers_exact('hello 1 2', 'hello 1 2 2')['pass'] == False
-    assert compare.compare_numbers_exact('hello 1 2', 'hello 1 2 3')['pass'] == False
-    assert compare.compare_numbers_exact('2 hello 1', 'hello 1 2')['pass'] == False
+    options = compare.Options(id_key_1='id', id_key_2='id', key_1='text', key_2='text')
+    def do_compare(text_1, text_2):
+        r1 = {'text': text_1}
+        r2 = {'text': text_2}
+        return compare.compare_numbers_exact(r1, r2, options)['pass']
+
+    do_compare('hello 1 2', 'hello 2 1') == False
+    do_compare('hello 1 2', 'hello 01 2') == False
+    do_compare('hello 1 2', 'hello 1 2 2') == False
+    do_compare('hello 1 2', 'hello 1 2 3') == False
+    do_compare('2 hello 1', 'hello 1 2') == False
 
 
 def test_compare_numbers_permutation():
-    assert compare.compare_numbers_permutation('hello 1 2', 'hello 2 1')['pass'] == True
-    assert compare.compare_numbers_permutation('hello 1 2', 'hello 01 2')['pass'] == True
-    assert compare.compare_numbers_permutation('hello 1 2', 'hello 1 2 2')['pass'] == False
-    assert compare.compare_numbers_permutation('hello 1 2', 'hello 1 2 3')['pass'] == False
-    assert compare.compare_numbers_permutation('2 hello 1', 'hello 1 2')['pass'] == True
+    options = compare.Options(id_key_1='id', id_key_2='id', key_1='text', key_2='text')
+    def do_compare(text_1, text_2):
+        r1 = {'text': text_1}
+        r2 = {'text': text_2}
+        return compare.compare_numbers_permutation(r1, r2, options)['pass']
+
+    do_compare('hello 1 2', 'hello 2 1') == True
+    do_compare('hello 1 2', 'hello 01 2') == True
+    do_compare('hello 1 2', 'hello 1 2 2') == False
+    do_compare('hello 1 2', 'hello 1 2 3') == False
+    do_compare('2 hello 1', 'hello 1 2') == True
 
 
 def test_compare_numbers_subset():
-    assert compare.compare_numbers_subset('hello 1 2', 'hello 2 1')['pass'] == True
-    assert compare.compare_numbers_subset('hello 1 2', 'hello 01 2')['pass'] == True
-    assert compare.compare_numbers_subset('hello 1 2', 'hello 1 2 2')['pass'] == True
-    assert compare.compare_numbers_subset('hello 1 2', 'hello 1 2 3')['pass'] == True
-    assert compare.compare_numbers_subset('2 hello 1', 'hello 1 2')['pass'] == True
-    assert compare.compare_numbers_subset('3 hello 4', 'hello 3 5')['pass'] == False
+    options = compare.Options(id_key_1='id', id_key_2='id', key_1='text', key_2='text')
+    def do_compare(text_1, text_2):
+        r1 = {'text': text_1}
+        r2 = {'text': text_2}
+        return compare.compare_numbers_subset(r1, r2, options)['pass']
+
+    do_compare('hello 1 2', 'hello 2 1') == True
+    do_compare('hello 1 2', 'hello 01 2') == True
+    do_compare('hello 1 2', 'hello 1 2 2') == True
+    do_compare('hello 1 2', 'hello 1 2 3') == True
+    do_compare('2 hello 1', 'hello 1 2') == True
+    do_compare('3 hello 4', 'hello 3 5') == False
