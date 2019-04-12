@@ -107,6 +107,12 @@ class Options:
     blocker_fn: Callable = ngram_blocker
     show_progress: bool = True
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
 
 def compare_fuzzy(record_1: List[Dict], record_2: List[Dict], options: Options):
     key_1 = options['key_1']

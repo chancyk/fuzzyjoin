@@ -1,4 +1,16 @@
+import pytest
+
 from fuzzyjoin import compare
+
+
+@pytest.fixture
+def options():
+    return compare.Options(
+        key_1="text",
+        key_2="text",
+        id_key_1="id",
+        id_key_2="id"
+    )
 
 
 def demo_records():
@@ -9,13 +21,7 @@ def demo_records():
     ]
 
 
-def test_default_compare():
-    options = compare.Options(
-        key_1="text",
-        key_2="text",
-        id_key_1="id",
-        id_key_2="id"
-    )
+def test_default_compare(options):
     def do_compare(text_1, text_2):
         r1 = {'text': text_1}
         r2 = {'text': text_2}
@@ -46,17 +52,11 @@ def test_ngrams():
     assert index["hell"] == {1, 2}
 
 
-def test_inner_join():
+def test_inner_join(options):
     threshold = 0.8
     records_1 = demo_records()
     records_2 = demo_records()
-    options = compare.Options(
-        key_1="text",
-        key_2="text",
-        id_key_1="id",
-        id_key_2="id",
-        threshold=threshold
-    )
+    options['threshold'] = threshold
     matches = compare.inner_join(
         table_1=records_1,
         table_2=records_2,
@@ -75,16 +75,10 @@ def test_inner_join():
     assert len(below_threshold) == 0
 
 
-def test_inner_join_lower_threshold():
+def test_inner_join_lower_threshold(options):
     records_1 = demo_records()
     records_2 = demo_records()
-    options = compare.Options(
-        key_1="text",
-        key_2="text",
-        id_key_1="id",
-        id_key_2="id",
-        threshold=0.1
-    )
+    options['threshold'] = 0.1
     matches = compare.inner_join(
         table_1=records_1,
         table_2=records_2,
@@ -101,16 +95,10 @@ def test_inner_join_lower_threshold():
     assert matches[2]["record_2"]["id"] == 1
 
 
-def test_inner_join_multiples():
+def test_inner_join_multiples(options):
     records_1 = demo_records()
     records_2 = demo_records()
-    options = compare.Options(
-        key_1="text",
-        key_2="text",
-        id_key_1="id",
-        id_key_2="id",
-        threshold=0.1
-    )
+    options['threshold'] = 0.1
     matches = compare.inner_join(
         table_1=records_1,
         table_2=records_2,
@@ -120,8 +108,7 @@ def test_inner_join_multiples():
     assert len(multiples) == 4
 
 
-def test_compare_numbers_exact():
-    options = compare.Options(id_key_1='id', id_key_2='id', key_1='text', key_2='text')
+def test_compare_numbers_exact(options):
     def do_compare(text_1, text_2):
         r1 = {'text': text_1}
         r2 = {'text': text_2}
@@ -134,8 +121,7 @@ def test_compare_numbers_exact():
     do_compare('2 hello 1', 'hello 1 2') == False
 
 
-def test_compare_numbers_permutation():
-    options = compare.Options(id_key_1='id', id_key_2='id', key_1='text', key_2='text')
+def test_compare_numbers_permutation(options):
     def do_compare(text_1, text_2):
         r1 = {'text': text_1}
         r2 = {'text': text_2}
@@ -148,8 +134,7 @@ def test_compare_numbers_permutation():
     do_compare('2 hello 1', 'hello 1 2') == True
 
 
-def test_compare_numbers_subset():
-    options = compare.Options(id_key_1='id', id_key_2='id', key_1='text', key_2='text')
+def test_compare_numbers_subset(options):
     def do_compare(text_1, text_2):
         r1 = {'text': text_1}
         r2 = {'text': text_2}
