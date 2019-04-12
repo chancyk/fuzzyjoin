@@ -1,7 +1,7 @@
 import re
 import time
 
-from typing import Callable, List, Iterator, Dict, Set, Tuple, Any
+from typing import NewType, Callable, List, Iterator, Dict, Set, Tuple, Any
 from collections import defaultdict
 
 try:
@@ -14,13 +14,14 @@ except Exception:
     levenshtein = pylev.levenshtein
 
 import attr
-from mypy_extensions import TypedDict
 
-from . import utils
 from .collate import default_collate, to_tokens
 
-
-Match = TypedDict("Match", {"score": float, "record_1": Dict, "record_2": Dict})
+try:
+    from mypy_extensions import TypedDict
+    Match = TypedDict("Match", {"score": float, "record_1": Dict, "record_2": Dict, "meta": Dict})
+except Exception:
+    Match = NewType("Match", Dict)
 
 # Consecutive digits.
 RE_NUMBERS = re.compile(r'\d+')
