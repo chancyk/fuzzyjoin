@@ -13,6 +13,10 @@ from fuzzyjoin import utils
 
 # flake8: noqa
 
+#############
+## HELPERS ##
+#############
+
 def execute_command(cmd_name, cmd):
     result = subprocess.run(cmd)
     if result.returncode == 0:
@@ -41,7 +45,7 @@ def check_for_sentinel(filename):
         sys.exit(0)
 
 
-def bump_version(version_part):
+def bump_version_file(version_part):
     this_dir = os.path.dirname(__file__)
     version_file = os.path.join(this_dir, 'VERSION')
     version_text = open(version_file).read()
@@ -49,14 +53,25 @@ def bump_version(version_part):
     with open(version_file, 'w') as out:
         out.write(new_version)
 
-    fuzzy_init_file = os.path.join('fuzzyjoin', '__init__.py')
-    text = open(fuzzy_init_file).read()
-    rx_version_line = r"__version__ = '\d+\.\d+\.\d+'"
-    old_version = re.search(rx_version_line, text).group()
-    new_line = re.sub(r"\d+\.\d+\.\d+", new_version, old_version)
-    new_text = re.sub(rx_version_line, new_line, text)
+    return new_version
+
+
+def bump_version_init_file(new_version):
+    this_dir = os.path.dirname(__file__)
+    fuzzy_init_file = os.path.join(this_dir, 'fuzzyjoin', '__init__.py')
+    fuzzy_init_text = open(fuzzy_init_file).read()
+    rx_version = r'\d+\.\d+\.\d+'
+    rx_version_line = f"__version__ = '{rx_version}'"
+    old_version = re.search(rx_version_line, fuzzy_init_text).group()
+    new_line = re.sub(rx_version, new_version, old_version)
+    new_text = re.sub(rx_version_line, new_line, fuzzy_init_text)
     with open(fuzzy_init_file, 'w') as out:
         out.write(new_text)
+
+
+#########
+## CLI ##
+#########
 
 
 @click.group()
@@ -66,7 +81,7 @@ def tasks_cli():
 
 @click.command()
 @click.argument('sample_type', type=click.Choice(['names']))
-def create_sample(sample_type):
+def cmd_create_sample(sample_type):
     if sample_type == 'names':
         this_dir = os.path.dirname(__file__)
         out_file = os.path.join(this_dir, 'data', 'names.txt')
@@ -81,19 +96,20 @@ def create_sample(sample_type):
 
 @click.command()
 @click.argument('version_part', type=click.Choice(['major', 'minor', 'patch']))
-def bump(version_part):
-    bump_version(version_part)
+def cmd_bump(version_part):
+    new_version = bump_version_file(version_part)
+    bump_version_init_file(new_version)
 
 
 @click.command()
-def check():
+def cmd_check():
     execute_command('Flake8', ['flake8'])
     execute_command('MyPy', ['mypy', 'fuzzyjoin'])
     execute_command('PyTest', ['python', '-m', 'pytest', 'tests'])
 
 
 @click.command()
-def build():
+def cmd_build():
     this_dir = os.path.dirname(__file__)
     check_for_sentinel('README.md')
     # Remove build/
@@ -113,7 +129,7 @@ def build():
 
 @click.command()
 @click.option('--test', is_flag=True, help="Publish to TestPyPI.")
-def publish(test):
+def cmd_publish(test):
     if test:
         repo = r'https://test.pypi.org/legacy/'
         cmd = ['twine', 'upload', f'--repository-url={repo}', 'dist/*']
@@ -124,11 +140,11 @@ def publish(test):
     execute_command('Publish', cmd)
 
 
-tasks_cli.add_command(check)
-tasks_cli.add_command(build)
-tasks_cli.add_command(publish)
-tasks_cli.add_command(create_sample)
-tasks_cli.add_command(bump)
+tasks_cli.add_command(cmd_check)
+tasks_cli.add_command(cmd_build)
+tasks_cli.add_command(cmd_publish)
+tasks_cli.add_command(cmd_create_sample)
+tasks_cli.add_command(cmd_bump)
 
 if __name__ == '__main__':
     tasks_cli()
