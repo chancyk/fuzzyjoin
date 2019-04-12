@@ -10,10 +10,16 @@ def demo_records():
 
 
 def test_default_compare():
-    assert 1.0 == compare.default_compare("string", "string")
-    assert 1.0 == compare.default_compare("hello world", "world-hello.")
-    assert 0.8 == compare.default_compare("hello", "hell")
-    assert 0.0 == compare.default_compare("hello", "zzzzz")
+    options = compare.Options(
+        key_1="text",
+        key_2="text",
+        id_key_1="id",
+        id_key_2="id"
+    )
+    assert 1.0 == compare.default_compare("string", "string", options)[-1]['score']
+    assert 1.0 == compare.default_compare("hello world", "world-hello.", options)[-1]['score']
+    assert 0.8 == compare.default_compare("hello", "hell", options)[-1]['score']
+    assert 0.0 == compare.default_compare("hello", "zzzzz", options)[-1]['score']
 
 
 def test_ngrams():
@@ -39,15 +45,17 @@ def test_inner_join():
     threshold = 0.8
     records_1 = demo_records()
     records_2 = demo_records()
-    matches = compare.inner_join(
-        table_1=records_1,
-        table_2=records_2,
+    options = compare.Options(
         key_1="text",
         key_2="text",
         id_key_1="id",
         id_key_2="id",
-        threshold=threshold,
-        ngram_size=3,
+        threshold=threshold
+    )
+    matches = compare.inner_join(
+        table_1=records_1,
+        table_2=records_2,
+        options=options
     )
     assert len(matches) == 3
     # We'll get two exact matches since we're using the
@@ -66,15 +74,17 @@ def test_inner_join_lower_threshold():
     threshold = 0.1
     records_1 = demo_records()
     records_2 = demo_records()
-    matches = compare.inner_join(
-        table_1=records_1,
-        table_2=records_2,
+    options = compare.Options(
         key_1="text",
         key_2="text",
         id_key_1="id",
         id_key_2="id",
-        threshold=threshold,
-        ngram_size=3,
+        threshold=threshold
+    )
+    matches = compare.inner_join(
+        table_1=records_1,
+        table_2=records_2,
+        options=options
     )
     assert len(matches) == 5
     # We'll get two low scoring approximate matches between
@@ -91,40 +101,42 @@ def test_inner_join_multiples():
     threshold = 0.1
     records_1 = demo_records()
     records_2 = demo_records()
-    matches = compare.inner_join(
-        table_1=records_1,
-        table_2=records_2,
+    options = compare.Options(
         key_1="text",
         key_2="text",
         id_key_1="id",
         id_key_2="id",
-        threshold=threshold,
-        ngram_size=3,
+        threshold=threshold
+    )
+    matches = compare.inner_join(
+        table_1=records_1,
+        table_2=records_2,
+        options=options
     )
     multiples = compare.filter_multiples(id_key="id", matches=matches)
     assert len(multiples) == 4
 
 
 def test_compare_numbers_exact():
-    assert compare.compare_numbers_exact('hello 1 2', 'hello 2 1') == False
-    assert compare.compare_numbers_exact('hello 1 2', 'hello 01 2') == True
-    assert compare.compare_numbers_exact('hello 1 2', 'hello 1 2 2') == False
-    assert compare.compare_numbers_exact('hello 1 2', 'hello 1 2 3') == False
-    assert compare.compare_numbers_exact('2 hello 1', 'hello 1 2') == False
+    assert compare.compare_numbers_exact('hello 1 2', 'hello 2 1')['pass'] == False
+    assert compare.compare_numbers_exact('hello 1 2', 'hello 01 2')['pass'] == True
+    assert compare.compare_numbers_exact('hello 1 2', 'hello 1 2 2')['pass'] == False
+    assert compare.compare_numbers_exact('hello 1 2', 'hello 1 2 3')['pass'] == False
+    assert compare.compare_numbers_exact('2 hello 1', 'hello 1 2')['pass'] == False
 
 
 def test_compare_numbers_permutation():
-    assert compare.compare_numbers_permutation('hello 1 2', 'hello 2 1') == True
-    assert compare.compare_numbers_permutation('hello 1 2', 'hello 01 2') == True
-    assert compare.compare_numbers_permutation('hello 1 2', 'hello 1 2 2') == False
-    assert compare.compare_numbers_permutation('hello 1 2', 'hello 1 2 3') == False
-    assert compare.compare_numbers_permutation('2 hello 1', 'hello 1 2') == True
+    assert compare.compare_numbers_permutation('hello 1 2', 'hello 2 1')['pass'] == True
+    assert compare.compare_numbers_permutation('hello 1 2', 'hello 01 2')['pass'] == True
+    assert compare.compare_numbers_permutation('hello 1 2', 'hello 1 2 2')['pass'] == False
+    assert compare.compare_numbers_permutation('hello 1 2', 'hello 1 2 3')['pass'] == False
+    assert compare.compare_numbers_permutation('2 hello 1', 'hello 1 2')['pass'] == True
 
 
 def test_compare_numbers_subset():
-    assert compare.compare_numbers_subset('hello 1 2', 'hello 2 1') == True
-    assert compare.compare_numbers_subset('hello 1 2', 'hello 01 2') == True
-    assert compare.compare_numbers_subset('hello 1 2', 'hello 1 2 2') == True
-    assert compare.compare_numbers_subset('hello 1 2', 'hello 1 2 3') == True
-    assert compare.compare_numbers_subset('2 hello 1', 'hello 1 2') == True
-    assert compare.compare_numbers_subset('3 hello 4', 'hello 3 5') == False
+    assert compare.compare_numbers_subset('hello 1 2', 'hello 2 1')['pass'] == True
+    assert compare.compare_numbers_subset('hello 1 2', 'hello 01 2')['pass'] == True
+    assert compare.compare_numbers_subset('hello 1 2', 'hello 1 2 2')['pass'] == True
+    assert compare.compare_numbers_subset('hello 1 2', 'hello 1 2 3')['pass'] == True
+    assert compare.compare_numbers_subset('2 hello 1', 'hello 1 2')['pass'] == True
+    assert compare.compare_numbers_subset('3 hello 4', 'hello 3 5')['pass'] == False

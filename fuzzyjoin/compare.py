@@ -1,7 +1,7 @@
 import re
 import time
 
-from typing import Callable, List, Iterator, Dict, Set, Tuple
+from typing import Callable, List, Iterator, Dict, Set, Tuple, Any
 from collections import defaultdict
 
 try:
@@ -13,8 +13,10 @@ except Exception:
     import pylev  # type: ignore
     levenshtein = pylev.levenshtein
 
+import attr
 from mypy_extensions import TypedDict
 
+from . import utils
 from .collate import default_collate, to_tokens
 
 
@@ -33,32 +35,133 @@ def compare_two_always_false(x, y):
 
 
 def default_compare(
-    text_1: str, text_2: str, collate_fn: Callable = default_collate
+    text_1: str, text_2: str, options: Any
 ) -> float:
-    """Calculate the string difference using `pylev.levenshtein` on
-    collated version of :param:`text_1` and :param:`text_2`.
+    comparisons = [
+        compare_numbers_exact,
+        compare_numbers_permutation,
+        compare_numbers_subset,
+        compare_fuzzy
+    ]
+    collate_fn = utils.get(options, 'collate_fn')
 
-    :meth:`fuzzyjoin.collate.default_collate` will be
-    used if `collate_fn` is not specified.
+    if text_1 == text_2:
+        return [{'pass': True, 'score': 1.0}]
 
-    `default_collate` will remove punction and sort the text tokens.
-
-    :returns: float
-        A value closer to 1.0 if the strings are similar, as a ratio of the
-        delta over the larger of the two strings.
-
-        1 - (delta / larger)
-    """
     text_1_c = collate_fn(text_1)
     text_2_c = collate_fn(text_2)
-    t1_len = len(text_1_c)
-    t2_len = len(text_2_c)
+    if text_1_c == text_2_c:
+        return [{'pass': True, 'score': 1.0}]
+
+    results = []
+    for comparison in comparisons:
+        result = comparison(text_1_c, text_2_c, options)
+        results.append(result)
+        if result['pass'] is False:
+            return results
+
+    return results
+
+
+@attr.s(auto_attribs=True)
+class Options:
+    id_key_1: str
+    id_key_2: str
+    key_1: str
+    key_2: str
+    ngram_size: int = 3
+    threshold: float = 0.7
+    numbers_exact: bool = False
+    numbers_permutation: bool = False
+    numbers_subset: bool = False
+    fuzzy_fn: Callable = levenshtein
+    collate_fn: Callable = default_collate
+    exclude_fn: Callable = compare_two_always_false
+    compare_fn: Callable = default_compare
+    show_progress: bool = True
+
+
+def compare_fuzzy(text_1: str, text_2: str, options: Options):
+    fn_name = utils.current_function()
+    threshold = utils.get(options, 'threshold')
+    fuzzy_fn = utils.get(options, 'fuzzy_fn')
+
+    t1_len = len(text_1)
+    t2_len = len(text_2)
     larger = t1_len if t1_len >= t2_len else t2_len
-    delta = levenshtein(text_1_c, text_2_c)
+    delta = fuzzy_fn(text_1, text_2)
     if delta >= larger:
-        return 0.0
+        score = 0.0
     else:
-        return 1 - (delta / larger)
+        score = 1 - (delta / larger)
+
+    if score >= threshold:
+        output = {'pass': True, 'score': score}
+    else:
+        output = {'pass': False, 'score': score}
+
+    output['meta'] = {
+        'function': fn_name,
+        'threshold': threshold,
+        'fuzzy_fn': fuzzy_fn.__name__
+    }
+    return output
+
+
+def compare_numbers_exact(text_1: str, text_2: str, options: Any = None) -> Dict:
+    """Numbers must appear in same order but without leading zeroes."""
+    fn_name = utils.current_function()
+    if options and not utils.get(options, 'numbers_exact'):
+        output = {'pass': True}
+
+    # Strip leading zeroes from all numbers.
+    numbers_1 = [int(x) for x in RE_NUMBERS.findall(text_1)]
+    numbers_2 = [int(x) for x in RE_NUMBERS.findall(text_2)]
+    if numbers_1 == numbers_2:
+        output = {'pass': True}
+    else:
+        output = {'pass': False}
+
+    output['meta'] = {'function': fn_name}
+    return output
+
+
+def compare_numbers_permutation(text_1: str, text_2: str, options: Any = None) -> Dict:
+    """Numbers match without leading zeroes and independent of order."""
+    fn_name = utils.current_function()
+    if options and not utils.get(options, 'numbers_permutation'):
+        output = {'pass': True}
+
+    # Strip leading zeroes from all numbers.
+    numbers_1 = sorted([int(x) for x in RE_NUMBERS.findall(text_1)])
+    numbers_2 = sorted([int(x) for x in RE_NUMBERS.findall(text_2)])
+    if numbers_1 == numbers_2:
+        output = {'pass': True}
+    else:
+        output = {'pass': False}
+
+    output['meta'] = {'function': fn_name}
+    return output
+
+
+def compare_numbers_subset(text_1: str, text_2: str, options: Any = None) -> bool:
+    """One set of numbers must be a complete subset of the other
+    without leading zeroes.
+    """
+    fn_name = utils.current_function()
+    if options and not utils.get(options, 'numbers_subset'):
+        output = {'pass': True}
+
+    # Strip leading zeroes from all numbers.
+    numbers_1 = set([int(x) for x in RE_NUMBERS.findall(text_1)])
+    numbers_2 = set([int(x) for x in RE_NUMBERS.findall(text_2)])
+    if numbers_1.issubset(numbers_2) or numbers_2.issubset(numbers_1):
+        output = {'pass': True}
+    else:
+        output = {'pass': False}
+
+    output['meta'] = {'function': fn_name}
+    return output
 
 
 def index_by_ngrams(
@@ -104,20 +207,7 @@ def token_to_ngrams(token: str, ngram_size: int) -> Iterator[str]:
 def inner_join(
     table_1: List[dict],
     table_2: List[dict],
-    key_1: str,
-    key_2: str,
-    id_key_1: str,
-    id_key_2: str,
-    threshold: float,
-    ngram_size: int = 3,
-    compare_fn: Callable = default_compare,
-    tx_fn_1: Callable = identity,
-    tx_fn_2: Callable = identity,
-    exclude_fn: Callable = compare_two_always_false,
-    show_progress: bool = True,
-    numbers_exact: bool = False,
-    numbers_permutation: bool = False,
-    numbers_subset: bool = False
+    options: Any,
 ) -> List[Match]:
     """Return only the matched record above `threshold`.
 
@@ -130,28 +220,28 @@ def inner_join(
     The default `ngram_size` is 3. Increase this value if join is too slow due
     to large block sizes.
     """
-    num_options = sum(
-        map(
-            lambda x: 1 if x else 0,
-            [numbers_exact, numbers_permutation, numbers_subset]
-        )
-    )
-    if num_options >= 2:
-        raise Exception("Only one numbers option may be selected.")
+    id_key_1 = utils.get(options, 'id_key_1')
+    id_key_2 = utils.get(options, 'id_key_2')
+    key_1 = utils.get(options, 'key_1')
+    key_2 = utils.get(options, 'key_2')
+    ngram_size = utils.get(options, 'ngram_size')
+    exclude_fn = utils.get(options, 'exclude_fn')
+    collate_fn = utils.get(options, 'collate_fn')
+    compare_fn = utils.get(options, 'compare_fn')
+    show_progress = utils.get(options, 'show_progress')
 
     total = 0
     index_2 = {x[id_key_2]: x for x in table_2}
     ngram_index_2 = index_by_ngrams(
-        table_2, ngram_size, index_key=key_2, id_key=id_key_2, tx_fn=tx_fn_2
+        table_2, ngram_size, index_key=key_2, id_key=id_key_2, tx_fn=collate_fn
     )
-
     last_time = time.clock()
     table_1_count = len(table_1)
     matches = []  # type: List[Match]
     matched_ids = set()  # type: Set[Tuple[str, str]]
     for i, record_1 in enumerate(table_1):
         id_1 = record_1[id_key_1]
-        text_1 = tx_fn_1(record_1[key_1])
+        text_1 = collate_fn(record_1[key_1])
         for ngram in to_ngrams(text_1, ngram_size):
             ngram_block = ngram_index_2.get(ngram, [])
             for id_2 in ngram_block:
@@ -165,37 +255,13 @@ def inner_join(
                 if exclude_fn(record_1, record_2):
                     continue
 
-                # Short circuit if the original text is identical.
-                if record_1[key_1] == record_2[key_2]:
-                    matches.append(
-                        {"score": 1.0, "record_1": record_1, "record_2": record_2}
-                    )
-                    matched_ids.add((id_1, id_2))
-                    continue
-
-                text_2 = tx_fn_2(record_2[key_2])
-                # Short circuit if the collated text is identical.
-                if text_1 == text_2:
-                    matches.append(
-                        {"score": 1.0, "record_1": record_1, "record_2": record_2}
-                    )
-                    matched_ids.add((id_1, id_2))
-                    continue
-
-                if numbers_exact and not compare_numbers_exact(text_1, text_2):
-                    continue
-
-                if numbers_permutation and not compare_numbers_permutation(text_1, text_2):
-                    continue
-
-                if numbers_subset and not compare_numbers_subset(text_1, text_2):
-                    continue
-
-                score = compare_fn(text_1, text_2)
-                if score >= threshold:
-                    matches.append(
-                        {"score": score, "record_1": record_1, "record_2": record_2}
-                    )
+                text_2 = collate_fn(record_2[key_2])
+                results = compare_fn(text_1, text_2, options)
+                last_result = results[-1]
+                if last_result['pass'] is True:
+                    last_result['record_1'] = record_1
+                    last_result['record_2'] = record_2
+                    matches.append(last_result)
                     matched_ids.add((id_1, id_2))
 
         if show_progress:
@@ -206,41 +272,6 @@ def inner_join(
 
     print(f"[INFO] Total comparisons: {total}")
     return matches
-
-
-def compare_numbers_exact(text_1: str, text_2: str) -> bool:
-    """Numbers must appear in same order but without leading zeroes."""
-    # Strip leading zeroes from all numbers.
-    numbers_1 = [int(x) for x in RE_NUMBERS.findall(text_1)]
-    numbers_2 = [int(x) for x in RE_NUMBERS.findall(text_2)]
-    if numbers_1 == numbers_2:
-        return True
-    else:
-        return False
-
-
-def compare_numbers_permutation(text_1: str, text_2: str) -> bool:
-    """Numbers match without leading zeroes and independent of order."""
-    # Strip leading zeroes from all numbers.
-    numbers_1 = sorted([int(x) for x in RE_NUMBERS.findall(text_1)])
-    numbers_2 = sorted([int(x) for x in RE_NUMBERS.findall(text_2)])
-    if numbers_1 == numbers_2:
-        return True
-    else:
-        return False
-
-
-def compare_numbers_subset(text_1: str, text_2: str) -> bool:
-    """One set of numbers must be a complete subset of the other
-    without leading zeroes.
-    """
-    # Strip leading zeroes from all numbers.
-    numbers_1 = set([int(x) for x in RE_NUMBERS.findall(text_1)])
-    numbers_2 = set([int(x) for x in RE_NUMBERS.findall(text_2)])
-    if numbers_1.issubset(numbers_2) or numbers_2.issubset(numbers_1):
-        return True
-    else:
-        return False
 
 
 def filter_multiples(id_key: str, matches: List[Match]) -> List[Match]:

@@ -1,8 +1,9 @@
 import os
 import csv
 import sys
+import inspect
 import importlib
-from typing import Iterator, Dict, List, Any, Optional
+from typing import Iterator, Dict, List, Any, Optional, Callable
 
 import colorama  # type: ignore
 
@@ -111,3 +112,45 @@ def bump_version(version_text, part):
 
     new_version = f'{p_major}.{p_minor}.{p_patch}'
     return new_version
+
+
+def current_frame():
+    frame = inspect.currentframe().f_back
+    return frame
+
+
+def current_function():
+    code = inspect.currentframe().f_back.f_code
+    filename = os.path.basename(code.co_filename)
+    lineno = code.co_firstlineno
+    function_name = code.co_name
+    fq_name = f'{filename}::{lineno}::{function_name}'
+    return fq_name
+
+
+def has(obj: Any, key: str) -> bool:
+    if hasattr(obj, '__getitem__'):
+        try:
+            obj[key]
+        except Exception:
+            return False
+        else:
+            return True
+    elif hasattr(obj, key):
+        return True
+    else:
+        return False
+
+
+def get(obj: Any, key: str) -> Any:
+    """Call the get method of `obj` if it exists, otherwise
+    try `getattr`.
+    """
+    if hasattr(obj, '__getitem__'):
+        return obj[key]
+    elif hasattr(obj, key):
+        return getattr(obj, key)
+    else:
+        obj_type = type(object)
+        obj_repr = obj.__repr__()
+        raise Exception(f'Unable to get {key} from object <{obj_type}>: {obj_repr}')
