@@ -22,8 +22,10 @@ from . import io, utils, compare
 @click.option("--numbers-exact", is_flag=True, help="Numbers and order must match exactly.")
 @click.option("--numbers-permutation", is_flag=True, help="Numbers must match but may be out of order.")
 @click.option("--numbers-subset", is_flag=True, help="Numbers must be a subset.")
+@click.option("--ngram-size", default=3, show_default=True, type=click.INT, help="The ngram size to create blocks with.")
 @click.option("--no-progress", "no_progress", is_flag=True, help="Do not show comparison progress.",)
 @click.option("--debug", is_flag=True, help="Exit to PDB on exception.")
+@click.option("--yes", is_flag=True, help="Yes to all prompts.")
 @click.argument("left_csv", required=True)
 @click.argument("right_csv", required=True)
 def main(
@@ -37,8 +39,10 @@ def main(
     numbers_exact,
     numbers_permutation,
     numbers_subset,
+    ngram_size,
     no_progress,
     debug,
+    yes,
     left_csv,
     right_csv,
 ):
