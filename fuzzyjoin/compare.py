@@ -35,19 +35,16 @@ def compare_two_always_false(x, y):
     return False
 
 
-def default_compare(
-    record_1: List[Dict], record_2: List[Dict], options: Any
-) -> List[Dict]:
+def default_compare(record_1: List[Dict], record_2: List[Dict], options: Any) -> List[Dict]:
+    key_1 = options['key_1']
+    key_2 = options['key_2']
+    collate_fn = options['collate_fn']
     comparisons = [
         compare_numbers_exact,
         compare_numbers_permutation,
         compare_numbers_subset,
         compare_fuzzy
     ]
-    key_1 = utils.get(options, 'key_1')
-    key_2 = utils.get(options, 'key_2')
-    collate_fn = utils.get(options, 'collate_fn')
-
     text_1 = record_1[key_1]
     text_2 = record_2[key_2]
     if text_1 == text_2:
@@ -69,12 +66,12 @@ def default_compare(
 
 
 def ngram_blocker(table_1: List[Dict], table_2: List[Dict], options: Any):
-    id_key_1 = utils.get(options, 'id_key_1')
-    id_key_2 = utils.get(options, 'id_key_2')
-    key_1 = utils.get(options, 'key_1')
-    key_2 = utils.get(options, 'key_2')
-    ngram_size = utils.get(options, 'ngram_size')
-    collate_fn = utils.get(options, 'collate_fn')
+    id_key_1 = options['id_key_1']
+    id_key_2 = options['id_key_2']
+    key_1 = options['key_1']
+    key_2 = options['key_2']
+    ngram_size = options['ngram_size']
+    collate_fn = options['collate_fn']
 
     ngram_index_2 = index_by_ngrams(
         table_2, ngram_size,
@@ -112,11 +109,10 @@ class Options:
 
 
 def compare_fuzzy(record_1: List[Dict], record_2: List[Dict], options: Options):
-    key_1 = utils.get(options, 'key_1')
-    key_2 = utils.get(options, 'key_2')
-    fn_name = utils.current_function()
-    threshold = utils.get(options, 'threshold')
-    fuzzy_fn = utils.get(options, 'fuzzy_fn')
+    key_1 = options['key_1']
+    key_2 = options['key_2']
+    threshold = options['threshold']
+    fuzzy_fn = options['fuzzy_fn']
 
     text_1 = record_1[key_1]
     text_2 = record_2[key_2]
@@ -135,7 +131,7 @@ def compare_fuzzy(record_1: List[Dict], record_2: List[Dict], options: Options):
         output = {'pass': False, 'score': score}
 
     output['meta'] = {
-        'function': fn_name,
+        'function': 'compare_fuzzy',
         'threshold': threshold,
         'fuzzy_fn': fuzzy_fn.__name__
     }
@@ -144,10 +140,9 @@ def compare_fuzzy(record_1: List[Dict], record_2: List[Dict], options: Options):
 
 def compare_numbers_exact(record_1: List[Dict], record_2: List[Dict], options: Any = None) -> Dict:
     """Numbers must appear in same order but without leading zeroes."""
-    fn_name = utils.current_function()
-    key_1 = utils.get(options, 'key_1')
-    key_2 = utils.get(options, 'key_2')
-    if options and not utils.get(options, 'numbers_exact'):
+    key_1 = options['key_1']
+    key_2 = options['key_2']
+    if options and not options['numbers_exact']:
         output = {'pass': True}
 
     text_1 = record_1[key_1]
@@ -160,16 +155,15 @@ def compare_numbers_exact(record_1: List[Dict], record_2: List[Dict], options: A
     else:
         output = {'pass': False}
 
-    output['meta'] = {'function': fn_name}
+    output['meta'] = {'function': 'compare_numbers_exact'}
     return output
 
 
 def compare_numbers_permutation(record_1: List[Dict], record_2: List[Dict], options: Any = None) -> Dict:
     """Numbers match without leading zeroes and independent of order."""
-    fn_name = utils.current_function()
-    key_1 = utils.get(options, 'key_1')
-    key_2 = utils.get(options, 'key_2')
-    if options and not utils.get(options, 'numbers_permutation'):
+    key_1 = options['key_1']
+    key_2 = options['key_2']
+    if options and not options['numbers_permutation']:
         output = {'pass': True}
 
     text_1 = record_1[key_1]
@@ -182,7 +176,7 @@ def compare_numbers_permutation(record_1: List[Dict], record_2: List[Dict], opti
     else:
         output = {'pass': False}
 
-    output['meta'] = {'function': fn_name}
+    output['meta'] = {'function': 'compare_numbers_permutation'}
     return output
 
 
@@ -190,10 +184,9 @@ def compare_numbers_subset(record_1: List[Dict], record_2: List[Dict], options: 
     """One set of numbers must be a complete subset of the other
     without leading zeroes.
     """
-    fn_name = utils.current_function()
-    key_1 = utils.get(options, 'key_1')
-    key_2 = utils.get(options, 'key_2')
-    if options and not utils.get(options, 'numbers_subset'):
+    key_1 = options['key_1']
+    key_2 = options['key_2']
+    if options and not options['numbers_subset']:
         output = {'pass': True}
 
     text_1 = record_1[key_1]
@@ -206,7 +199,7 @@ def compare_numbers_subset(record_1: List[Dict], record_2: List[Dict], options: 
     else:
         output = {'pass': False}
 
-    output['meta'] = {'function': fn_name}
+    output['meta'] = {'function': 'compare_numbers_subset'}
     return output
 
 
@@ -266,15 +259,13 @@ def inner_join(
     The default `ngram_size` is 3. Increase this value if join is too slow due
     to large block sizes.
     """
-    id_key_1 = utils.get(options, 'id_key_1')
-    id_key_2 = utils.get(options, 'id_key_2')
-    key_1 = utils.get(options, 'key_1')
-    key_2 = utils.get(options, 'key_2')
-    exclude_fn = utils.get(options, 'exclude_fn')
-    collate_fn = utils.get(options, 'collate_fn')
-    compare_fn = utils.get(options, 'compare_fn')
-    blocker_fn = utils.get(options, 'blocker_fn')
-    show_progress = utils.get(options, 'show_progress')
+    options = options.__dict__
+    id_key_1 = options['id_key_1']
+    id_key_2 = options['id_key_2']
+    exclude_fn = options['exclude_fn']
+    compare_fn = options['compare_fn']
+    blocker_fn = options['blocker_fn']
+    show_progress = options['show_progress']
 
     total = 0
     id_index_1 = {x[id_key_1]: x for x in table_1}
@@ -282,7 +273,6 @@ def inner_join(
     blocks = blocker_fn(table_1, table_2, options)
 
     last_time = time.clock()
-    table_1_count = len(table_1)
     matches = []  # type: List[Match]
     matched_ids = set()  # type: Set[Tuple[str, str]]
     for i, block in enumerate(blocks):
@@ -311,9 +301,11 @@ def inner_join(
         if show_progress:
             t = time.clock()
             if (t - last_time) > 5:
-                print(f"[INFO] {i} of {table_1_count} : {t:.2f}s")
+                print(f"[INFO] {i} of {len(blocks)} : {t:.2f}s")
                 last_time = t
 
+    t = time.clock()
+    print(f"[INFO] {i} of {len(blocks)} : {t:.2f}s")
     print(f"[INFO] Total comparisons: {total}")
     return matches
 

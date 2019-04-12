@@ -52,23 +52,22 @@ def main(
         exclude_fn = utils.import_function(exclude) if exclude else None
         key_1, key_2 = fields
         id_key_1, id_key_2 = ids
-        matches = io.inner_join_files(
-            left_csv,
-            right_csv,
+        options = compare.Options(
             key_1=key_1,
             key_2=key_2,
             id_key_1=id_key_1,
             id_key_2=id_key_2,
             threshold=threshold,
             ngram_size=ngram_size,
-            tx_fn_1=collate_fn or compare.identity,
-            tx_fn_2=collate_fn or compare.identity,
+            collate_fn=collate_fn or compare.identity,
             exclude_fn=exclude_fn or compare.compare_two_always_false,
             show_progress=not no_progress,
             numbers_exact=numbers_exact,
             numbers_permutation=numbers_permutation,
             numbers_subset=numbers_subset
         )
+        matches = io.inner_join_csv_files(left_csv, right_csv, options)
+
         if output is None:
             output = "matches.csv"
 
