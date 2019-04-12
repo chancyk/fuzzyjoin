@@ -24,6 +24,14 @@ Match = TypedDict("Match", {"score": float, "record_1": Dict, "record_2": Dict})
 RE_NUMBERS = re.compile(r'\d+')
 
 
+def identity(x):
+    return x
+
+
+def compare_two_always_false(x, y):
+    return False
+
+
 def default_compare(
     text_1: str, text_2: str, collate_fn: Callable = default_collate
 ) -> float:
@@ -103,9 +111,9 @@ def inner_join(
     threshold: float,
     ngram_size: int = 3,
     compare_fn: Callable = default_compare,
-    tx_fn_1: Callable = lambda x: x,
-    tx_fn_2: Callable = lambda x: x,
-    exclude_fn: Callable = lambda x, y: False,
+    tx_fn_1: Callable = identity,
+    tx_fn_2: Callable = identity,
+    exclude_fn: Callable = compare_two_always_false,
     show_progress: bool = True,
     numbers_exact: bool = False,
     numbers_permutation: bool = False,
