@@ -71,7 +71,6 @@ def test_inner_join():
 
 
 def test_inner_join_lower_threshold():
-    threshold = 0.1
     records_1 = demo_records()
     records_2 = demo_records()
     options = compare.Options(
@@ -79,7 +78,7 @@ def test_inner_join_lower_threshold():
         key_2="text",
         id_key_1="id",
         id_key_2="id",
-        threshold=threshold
+        threshold=0.1
     )
     matches = compare.inner_join(
         table_1=records_1,
@@ -98,7 +97,6 @@ def test_inner_join_lower_threshold():
 
 
 def test_inner_join_multiples():
-    threshold = 0.1
     records_1 = demo_records()
     records_2 = demo_records()
     options = compare.Options(
@@ -106,7 +104,7 @@ def test_inner_join_multiples():
         key_2="text",
         id_key_1="id",
         id_key_2="id",
-        threshold=threshold
+        threshold=0.1
     )
     matches = compare.inner_join(
         table_1=records_1,
