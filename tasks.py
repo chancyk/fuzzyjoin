@@ -69,6 +69,18 @@ def bump_version_init_file(new_version):
         out.write(new_text)
 
 
+def create_names_sample(sample_count):
+    this_dir = os.path.dirname(__file__)
+    out_file = os.path.join(this_dir, 'data', 'names.txt')
+    with open(out_file, 'w') as out:
+        f = faker.Faker()
+        out.write('id,name\n')
+        for id in range(1, sample_count):
+            out.write(f'{id},{f.name()}\n')
+
+    print(f'[INFO] Wrote file: {out_file}')
+
+
 #########
 ## CLI ##
 #########
@@ -81,17 +93,10 @@ def tasks_cli():
 
 @click.command('create-sample')
 @click.argument('sample_type', type=click.Choice(['names']))
-def cmd_create_sample(sample_type):
+@click.argument('sample_count', type=click.INT)
+def cmd_create_sample(sample_type, sample_count):
     if sample_type == 'names':
-        this_dir = os.path.dirname(__file__)
-        out_file = os.path.join(this_dir, 'data', 'names.txt')
-        with open(out_file, 'w') as out:
-            f = faker.Faker()
-            out.write('id,name\n')
-            for id in range(1, 10_001):
-                out.write(f'{id},{f.name()}\n')
-
-        print(f'[INFO] Wrote file: {out_file}')
+        create_names_sample(sample_count)
 
 
 @click.command('bump')
