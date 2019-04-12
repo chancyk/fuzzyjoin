@@ -79,7 +79,7 @@ def tasks_cli():
     pass
 
 
-@click.command()
+@click.command('create-sample')
 @click.argument('sample_type', type=click.Choice(['names']))
 def cmd_create_sample(sample_type):
     if sample_type == 'names':
@@ -94,21 +94,21 @@ def cmd_create_sample(sample_type):
         print(f'[INFO] Wrote file: {out_file}')
 
 
-@click.command()
+@click.command('bump')
 @click.argument('version_part', type=click.Choice(['major', 'minor', 'patch']))
 def cmd_bump(version_part):
     new_version = bump_version_file(version_part)
     bump_version_init_file(new_version)
 
 
-@click.command()
+@click.command('check')
 def cmd_check():
     execute_command('Flake8', ['flake8'])
     execute_command('MyPy', ['mypy', 'fuzzyjoin'])
     execute_command('PyTest', ['python', '-m', 'pytest', 'tests'])
 
 
-@click.command()
+@click.command('build')
 def cmd_build():
     this_dir = os.path.dirname(__file__)
     check_for_sentinel('README.md')
@@ -127,7 +127,7 @@ def cmd_build():
     execute_command('Build', cmd)
 
 
-@click.command()
+@click.command('publish')
 @click.option('--test', is_flag=True, help="Publish to TestPyPI.")
 def cmd_publish(test):
     if test:
