@@ -1,6 +1,5 @@
 -r test.txt
 pip
-punch.py
 wheel
 flake8
 mypy
