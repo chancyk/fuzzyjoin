@@ -150,6 +150,7 @@ def inner_join(
     matches = []  # type: List[Match]
     matched_ids = set()  # type: Set[Tuple[str, str]]
     for i, record_1 in enumerate(table_1):
+        id_1 = record_1[id_key_1]
         text_1 = tx_fn_1(record_1[key_1])
         for ngram in to_ngrams(text_1, ngram_size):
             ngram_block = ngram_index_2.get(ngram, [])
@@ -164,8 +165,23 @@ def inner_join(
                 if exclude_fn(record_1, record_2):
                     continue
 
-                total += 1
+                # Short circuit if the original text is identical.
+                if record_1[key_1] == record_2[key_2]:
+                    matches.append(
+                        {"score": 1.0, "record_1": record_1, "record_2": record_2}
+                    )
+                    matched_ids.add((id_1, id_2))
+                    continue
+
                 text_2 = tx_fn_2(record_2[key_2])
+                # Short circuit if the collated text is identical.
+                if text_1 == text_2:
+                    matches.append(
+                        {"score": 1.0, "record_1": record_1, "record_2": record_2}
+                    )
+                    matched_ids.add((id_1, id_2))
+                    continue
+
                 if numbers_exact and not compare_numbers_exact(text_1, text_2):
                     continue
 
