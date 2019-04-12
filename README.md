@@ -45,6 +45,12 @@ TODO
 History
 =======
 
+0.3.4 (2019-04-11)
+------------------
+* Fix function defaults.
+* Minor optimizations.
+* Additional CLI parameters.
+
 0.3.3 (2019-04-10)
 ------------------
 * Cleanup checks.
