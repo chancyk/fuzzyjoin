@@ -155,13 +155,13 @@ def inner_join(
         for ngram in to_ngrams(text_1, ngram_size):
             ngram_block = ngram_index_2.get(ngram, [])
             for id_2 in ngram_block:
-                id_1 = record_1[id_key_1]
+                total += 1
                 # If already matched, don't compare again.
                 if (id_1, id_2) in matched_ids:
                     continue
 
-                # Don't compare if the exclude_fn returns true.
                 record_2 = index_2[id_2]
+                # Don't compare if the exclude_fn returns true.
                 if exclude_fn(record_1, record_2):
                     continue
 
@@ -204,6 +204,7 @@ def inner_join(
                 print(f"[INFO] {i} of {table_1_count} : {t:.2f}s")
                 last_time = t
 
+    print(f"[INFO] Total comparisons: {total}")
     return matches
 
 
