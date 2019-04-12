@@ -6,6 +6,9 @@ from setuptools import setup
 with open('README.md') as readme_file:
     readme = readme_file.read()
 
+with open('VERSION') as version_file:
+    version = version_file.read().strip()
+
 requirements = [
     'Click>=7.0,<8.0',
     'pylev>=1.3.0,<1.4.0'
@@ -16,7 +19,7 @@ test_requirements = [
 
 setup(
     name='fuzzyjoin',
-    version='0.3.4',
+    version=version,
     description="Join two tables by a fuzzy comparison of text columns.",
     long_description=readme,
     author="Chancy Kennedy",

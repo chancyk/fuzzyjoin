@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import sys
 import shutil
 import subprocess
@@ -40,6 +41,24 @@ def check_for_sentinel(filename):
         sys.exit(0)
 
 
+def bump_version(version_part):
+    this_dir = os.path.dirname(__file__)
+    version_file = os.path.join(this_dir, 'VERSION')
+    version_text = open(version_file).read()
+    new_version = utils.bump_version(version_text, part=version_part)
+    with open(version_file, 'w') as out:
+        out.write(new_version)
+
+    fuzzy_init_file = os.path.join('fuzzyjoin', '__init__.py')
+    text = open(fuzzy_init_file).read()
+    rx_version_line = r"__version__ = '\d+\.\d+\.\d+'"
+    old_version = re.search(rx_version_line, text).group()
+    new_line = re.sub(r"\d+\.\d+\.\d+", new_version, old_version)
+    new_text = re.sub(rx_version_line, new_line, text)
+    with open(fuzzy_init_file, 'w') as out:
+        out.write(new_text)
+
+
 @click.group()
 def tasks_cli():
     pass
@@ -58,6 +77,12 @@ def create_sample(sample_type):
                 out.write(f'{id},{f.name()}\n')
 
         print(f'[INFO] Wrote file: {out_file}')
+
+
+@click.command()
+@click.argument('version_part', type=click.Choice(['major', 'minor', 'patch']))
+def bump(version_part):
+    bump_version(version_part)
 
 
 @click.command()
@@ -103,6 +128,7 @@ tasks_cli.add_command(check)
 tasks_cli.add_command(build)
 tasks_cli.add_command(publish)
 tasks_cli.add_command(create_sample)
+tasks_cli.add_command(bump)
 
 if __name__ == '__main__':
     tasks_cli()

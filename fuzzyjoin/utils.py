@@ -90,3 +90,24 @@ def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i + n]
+
+
+def bump_version(version_text, part):
+    if part not in ('major', 'minor', 'patch'):
+        raise Exception("part must be one of: major, minor, patch")
+
+    p_major, p_minor, p_patch = [int(x) for x in version_text.split('.')]
+    if part == 'major':
+        p_major += 1
+        p_minor = 0
+        p_patch = 0
+    elif part == 'minor':
+        p_minor += 1
+        p_patch = 0
+    elif part == 'patch':
+        p_patch += 1
+    else:
+        raise Exception("Invalid part. Must be one of: major, minor, patch")
+
+    new_version = f'{p_major}.{p_minor}.{p_patch}'
+    return new_version
