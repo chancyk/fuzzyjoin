@@ -86,7 +86,7 @@ def import_function(fq_module_path: str):
     return function
 
 
-def chunks(l, n):
+def yield_chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i + n]
