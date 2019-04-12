@@ -165,7 +165,9 @@ def compare_numbers_exact(record_1: List[Dict], record_2: List[Dict], options: A
     return output
 
 
-def compare_numbers_permutation(record_1: List[Dict], record_2: List[Dict], options: Any = None) -> Dict:
+def compare_numbers_permutation(
+    record_1: List[Dict], record_2: List[Dict], options: Any = None
+) -> Dict:
     """Numbers match without leading zeroes and independent of order."""
     key_1 = options['key_1']
     key_2 = options['key_2']
