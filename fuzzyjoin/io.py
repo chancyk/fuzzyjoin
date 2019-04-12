@@ -1,16 +1,16 @@
 import csv
-from typing import List
+from typing import List, Any
 
 from . import compare, utils
 
 
-def inner_join_files(left_file: str, right_file: str, **kwargs) -> List[compare.Match]:
+def inner_join_csv_files(left_file: str, right_file: str, options: Any) -> List[compare.Match]:
     """Load the tables from files `left_file` and `right_file` and
     then pass them into `compare.inner_join`.
     """
     left_records = utils.load_csv_as_records(left_file)
     right_records = utils.load_csv_as_records(right_file)
-    return compare.inner_join(table_1=left_records, table_2=right_records, **kwargs)
+    return compare.inner_join(left_records, right_records, options)
 
 
 def write_matches(matches: List[compare.Match], output_file: str):
