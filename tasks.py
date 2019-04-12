@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 import click
+import faker
 
 from fuzzyjoin import utils
 
@@ -42,6 +43,21 @@ def check_for_sentinel(filename):
 @click.group()
 def tasks_cli():
     pass
+
+
+@click.command()
+@click.argument('sample_type', type=click.Choice(['names']))
+def create_sample(sample_type):
+    if sample_type == 'names':
+        this_dir = os.path.dirname(__file__)
+        out_file = os.path.join(this_dir, 'data', 'names.txt')
+        with open(out_file, 'w') as out:
+            f = faker.Faker()
+            out.write('id,name\n')
+            for id in range(1, 10_001):
+                out.write(f'{id},{f.name()}\n')
+
+        print(f'[INFO] Wrote file: {out_file}')
 
 
 @click.command()
@@ -86,6 +102,7 @@ def publish(test):
 tasks_cli.add_command(check)
 tasks_cli.add_command(build)
 tasks_cli.add_command(publish)
+tasks_cli.add_command(create_sample)
 
 if __name__ == '__main__':
     tasks_cli()
