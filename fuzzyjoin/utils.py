@@ -3,7 +3,7 @@ import csv
 import sys
 import inspect
 import importlib
-from typing import Iterator, Dict, List, Any, Optional, Callable
+from typing import Iterator, Dict, List, Any, Optional
 
 import colorama  # type: ignore
 

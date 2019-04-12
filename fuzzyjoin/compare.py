@@ -17,11 +17,8 @@ import attr
 
 from .collate import default_collate, to_tokens
 
-try:
-    from mypy_extensions import TypedDict
-    Match = TypedDict("Match", {"score": float, "record_1": Dict, "record_2": Dict, "meta": Dict})
-except Exception:
-    Match = NewType("Match", Dict)
+
+Match = NewType("Match", Dict[str, Any])
 
 # Consecutive digits.
 RE_NUMBERS = re.compile(r'\d+')
@@ -57,7 +54,7 @@ def default_compare(record_1: List[Dict], record_2: List[Dict], options: Any) ->
 
     results = []
     for comparison in comparisons:
-        result = comparison(record_1, record_2, options)
+        result = comparison(record_1, record_2, options)  # type: ignore
         results.append(result)
         if result['pass'] is False:
             return results
@@ -114,12 +111,15 @@ class Options:
         setattr(self, key, value)
 
 
-def compare_fuzzy(record_1: List[Dict], record_2: List[Dict], options: Options):
+def compare_fuzzy(
+    record_1: List[Dict], record_2: List[Dict], options: Options
+) -> Dict[str, Any]:
     key_1 = options['key_1']
     key_2 = options['key_2']
     threshold = options['threshold']
     fuzzy_fn = options['fuzzy_fn']
 
+    output: Dict[str, Any] = {}
     text_1 = record_1[key_1]
     text_2 = record_2[key_2]
     t1_len = len(text_1)
@@ -144,12 +144,16 @@ def compare_fuzzy(record_1: List[Dict], record_2: List[Dict], options: Options):
     return output
 
 
-def compare_numbers_exact(record_1: List[Dict], record_2: List[Dict], options: Any = None) -> Dict:
+def compare_numbers_exact(
+    record_1: List[Dict], record_2: List[Dict], options: Dict[str, Any]
+) -> Dict[str, Any]:
     """Numbers must appear in same order but without leading zeroes."""
+    meta = {'function': 'compare_numbers_exact'}
     key_1 = options['key_1']
     key_2 = options['key_2']
-    if options and not options['numbers_exact']:
-        output = {'pass': True}
+    if not options['numbers_exact']:
+        output = {'pass': True, 'meta': meta}
+        return output
 
     text_1 = record_1[key_1]
     text_2 = record_2[key_2]
@@ -161,18 +165,20 @@ def compare_numbers_exact(record_1: List[Dict], record_2: List[Dict], options: A
     else:
         output = {'pass': False}
 
-    output['meta'] = {'function': 'compare_numbers_exact'}
+    output['meta'] = meta
     return output
 
 
 def compare_numbers_permutation(
-    record_1: List[Dict], record_2: List[Dict], options: Any = None
-) -> Dict:
+    record_1: List[Dict], record_2: List[Dict], options: Dict[str, Any]
+) -> Dict[str, Any]:
     """Numbers match without leading zeroes and independent of order."""
+    meta = {'function': 'compare_numbers_permutation'}
     key_1 = options['key_1']
     key_2 = options['key_2']
-    if options and not options['numbers_permutation']:
-        output = {'pass': True}
+    if not options['numbers_permutation']:
+        output = {'pass': True, 'meta': meta}
+        return output
 
     text_1 = record_1[key_1]
     text_2 = record_2[key_2]
@@ -184,18 +190,22 @@ def compare_numbers_permutation(
     else:
         output = {'pass': False}
 
-    output['meta'] = {'function': 'compare_numbers_permutation'}
+    output['meta'] = meta
     return output
 
 
-def compare_numbers_subset(record_1: List[Dict], record_2: List[Dict], options: Any = None) -> bool:
+def compare_numbers_subset(
+    record_1: List[Dict], record_2: List[Dict], options: Dict[str, Any]
+) -> Dict[str, Any]:
     """One set of numbers must be a complete subset of the other
     without leading zeroes.
     """
+    meta = {'function': 'compare_numbers_subset'}
     key_1 = options['key_1']
     key_2 = options['key_2']
-    if options and not options['numbers_subset']:
-        output = {'pass': True}
+    if not options['numbers_subset']:
+        output = {'pass': True, 'meta': meta}
+        return output
 
     text_1 = record_1[key_1]
     text_2 = record_2[key_2]
@@ -207,7 +217,7 @@ def compare_numbers_subset(record_1: List[Dict], record_2: List[Dict], options: 
     else:
         output = {'pass': False}
 
-    output['meta'] = {'function': 'compare_numbers_subset'}
+    output['meta'] = meta
     return output
 
 
@@ -255,7 +265,7 @@ def inner_join(
     table_1: List[Dict],
     table_2: List[Dict],
     options: Any,
-) -> List[Match]:
+) -> List[Dict[str, Any]]:
     """Return only the matched record above `threshold`.
 
     Block the records from `table_2` by ngrams of size `ngram_size`.
@@ -281,7 +291,7 @@ def inner_join(
     blocks = blocker_fn(table_1, table_2, options)
 
     last_time = time.clock()
-    matches = []  # type: List[Match]
+    matches = []  # type: List[Dict[str, Any]]
     matched_ids = set()  # type: Set[Tuple[str, str]]
     for i, block in enumerate(blocks):
         id_1, block_ids = block
@@ -318,7 +328,7 @@ def inner_join(
     return matches
 
 
-def filter_multiples(id_key: str, matches: List[Match]) -> List[Match]:
+def filter_multiples(id_key: str, matches: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Returns the list of matches where a left table ID has
     multiple matches in the right table.
     """

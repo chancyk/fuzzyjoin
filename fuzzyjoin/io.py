@@ -1,10 +1,10 @@
 import csv
-from typing import List, Any
+from typing import List, Any, Dict
 
 from . import compare, utils
 
 
-def inner_join_csv_files(left_file: str, right_file: str, options: Any) -> List[compare.Match]:
+def inner_join_csv_files(left_file: str, right_file: str, options: Any) -> List[Dict[str, Any]]:
     """Load the tables from files `left_file` and `right_file` and
     then pass them into `compare.inner_join`.
     """

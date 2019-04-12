@@ -9,6 +9,7 @@ from pathlib import Path
 import click
 import faker
 
+import fuzzyjoin
 from fuzzyjoin import utils
 
 # flake8: noqa
@@ -20,8 +21,7 @@ from fuzzyjoin import utils
 def execute_command(cmd_name, cmd):
     result = subprocess.run(cmd)
     if result.returncode == 0:
-        import punch_version as v
-        version = f'{v.major}.{v.minor}.{v.patch}'
+        version = fuzzyjoin.__version__
         msg = f'[INFO] {cmd_name} complete: {version}'
         print('-' * len(msg))
         print(msg + '\n')
