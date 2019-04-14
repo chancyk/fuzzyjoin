@@ -1,5 +1,8 @@
 import re
 import time
+import math
+import multiprocessing
+from functools import partial
 
 from typing import NewType, Callable, List, Iterator, Dict, Set, Tuple, Any
 from collections import defaultdict
@@ -15,6 +18,7 @@ except Exception:
 
 import attr
 
+from . import utils
 from .collate import default_collate, to_tokens
 
 
@@ -63,8 +67,6 @@ def default_compare(record_1: List[Dict], record_2: List[Dict], options: Any) ->
 
 
 def ngram_blocker(table_1: List[Dict], table_2: List[Dict], options: Any):
-    id_key_1 = options['id_key_1']
-    id_key_2 = options['id_key_2']
     key_1 = options['key_1']
     key_2 = options['key_2']
     ngram_size = options['ngram_size']
@@ -72,12 +74,11 @@ def ngram_blocker(table_1: List[Dict], table_2: List[Dict], options: Any):
 
     ngram_index_2 = index_by_ngrams(
         table_2, ngram_size,
-        index_key=key_2, id_key=id_key_2,
+        index_key=key_2,
         tx_fn=collate_fn
     )
     blocks = []
-    for record_1 in table_1:
-        id_1 = record_1[id_key_1]
+    for id_1, record_1 in enumerate(table_1):
         text_1 = collate_fn(record_1[key_1])
         for ngram in to_ngrams(text_1, ngram_size):
             ngram_block = ngram_index_2.get(ngram, [])
@@ -103,6 +104,7 @@ class Options:
     compare_fn: Callable = default_compare
     blocker_fn: Callable = ngram_blocker
     show_progress: bool = True
+    num_processes: int = 4
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -225,14 +227,13 @@ def index_by_ngrams(
     records: List[Dict],
     ngram_size: int,
     index_key: str,
-    id_key: str,
     tx_fn: Callable = default_collate,
 ) -> Dict[str, Set[str]]:
-    """Collect the IDs from `id_key` of each ngram from field `index_key`."""
+    """Collect the IDs for each ngram from field `index_key`."""
     index: Dict[str, Set[str]] = defaultdict(set)
-    for record in records:
+    for id, record in enumerate(records):
         for ngram in to_ngrams(tx_fn(record[index_key]), ngram_size):
-            index[ngram].add(record[id_key])
+            index[ngram].add(id)
 
     return dict(index)
 
@@ -278,32 +279,40 @@ def inner_join(
     to large block sizes.
     """
     options = options.__dict__
-    id_key_1 = options['id_key_1']
-    id_key_2 = options['id_key_2']
+    blocker_fn = options['blocker_fn']
+    num_processes = options['num_processes']
+
+    blocks = blocker_fn(table_1, table_2, options)
+    chunk_size = math.ceil(len(blocks) / (num_processes or 1))
+    record_blocks = []
+    for id_1, ids_2 in blocks:
+        record_1 = table_1[id_1]
+        records_2 = [table_2[id] for id in ids_2]
+        record_blocks.append((record_1, records_2))
+
+    record_blocks_chunks = utils.yield_chunks(record_blocks, chunk_size)
+
+    matches = []
+    t0 = time.clock()
+    compare_fn = partial(do_compare, options)
+    if num_processes <= 1:
+        matches = do_compare(options, next(record_blocks_chunks))
+    else:
+        print('[INFO] Using processes: %s' % num_processes)
+        with multiprocessing.Pool(num_processes) as p:
+            for result in p.imap_unordered(compare_fn, record_blocks_chunks):
+                matches.extend(result)
+
+    print("[INFO] Elapsed: %s" % (time.clock() - t0))
+    return matches
+
+
+def do_compare(options, record_blocks_chunk):
     exclude_fn = options['exclude_fn']
     compare_fn = options['compare_fn']
-    blocker_fn = options['blocker_fn']
-    show_progress = options['show_progress']
-
-    total = 0
-    id_index_1 = {x[id_key_1]: x for x in table_1}
-    id_index_2 = {x[id_key_2]: x for x in table_2}
-    blocks = blocker_fn(table_1, table_2, options)
-
-    last_time = time.clock()
-    matches = []  # type: List[Dict[str, Any]]
-    matched_ids = set()  # type: Set[Tuple[str, str]]
-    for i, block in enumerate(blocks):
-        id_1, block_ids = block
-        record_1 = id_index_1[id_1]
-        for id_2 in block_ids:
-            # If already matched, don't compare again. The same
-            # pairs may appear across multiple blocks.
-            if (id_1, id_2) in matched_ids:
-                continue
-
-            total += 1
-            record_2 = id_index_2[id_2]
+    matches = []
+    for record_1, records_2 in record_blocks_chunk:
+        for record_2 in records_2:
             if exclude_fn(record_1, record_2):
                 continue
 
@@ -314,17 +323,7 @@ def inner_join(
                 match = {'score': score, 'record_1': record_1, 'record_2': record_2}
                 match['meta'] = {'match_stages': results}
                 matches.append(match)
-                matched_ids.add((id_1, id_2))
 
-        if show_progress:
-            t = time.clock()
-            if (t - last_time) > 5:
-                print(f"[INFO] {i} of {len(blocks)} : {t:.2f}s")
-                last_time = t
-
-    t = time.clock()
-    print(f"[INFO] {i} of {len(blocks)} : {t:.2f}s")
-    print(f"[INFO] Total comparisons: {total}")
     return matches
 
 

@@ -26,6 +26,8 @@ from . import io, utils, compare
 @click.option("--no-progress", "no_progress", is_flag=True, help="Do not show comparison progress.",)
 @click.option("--debug", is_flag=True, help="Exit to PDB on exception.")
 @click.option("--yes", is_flag=True, help="Yes to all prompts.")
+@click.option("--num-processes", default=1, show_default=True, type=click.INT,
+    help="Number of processes to use for comparisons. Values over 4 tend to not be useful.")
 @click.argument("left_csv", required=True)
 @click.argument("right_csv", required=True)
 def main(
@@ -43,6 +45,7 @@ def main(
     no_progress,
     debug,
     yes,
+    num_processes,
     left_csv,
     right_csv,
 ):
@@ -64,7 +67,8 @@ def main(
             show_progress=not no_progress,
             numbers_exact=numbers_exact,
             numbers_permutation=numbers_permutation,
-            numbers_subset=numbers_subset
+            numbers_subset=numbers_subset,
+            num_processes=num_processes
         )
         matches = io.inner_join_csv_files(left_csv, right_csv, options)
 
