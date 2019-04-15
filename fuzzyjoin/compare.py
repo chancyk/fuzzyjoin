@@ -63,8 +63,6 @@ def default_compare(record_1: List[Dict], record_2: List[Dict], options: Any) ->
 
 
 def ngram_blocker(table_1: List[Dict], table_2: List[Dict], options: Any):
-    id_key_1 = options['id_key_1']
-    id_key_2 = options['id_key_2']
     key_1 = options['key_1']
     key_2 = options['key_2']
     ngram_size = options['ngram_size']
@@ -72,12 +70,11 @@ def ngram_blocker(table_1: List[Dict], table_2: List[Dict], options: Any):
 
     ngram_index_2 = index_by_ngrams(
         table_2, ngram_size,
-        index_key=key_2, id_key=id_key_2,
+        index_key=key_2,
         tx_fn=collate_fn
     )
     blocks = []
-    for record_1 in table_1:
-        id_1 = record_1[id_key_1]
+    for id_1, record_1 in enumerate(table_1):
         text_1 = collate_fn(record_1[key_1])
         for ngram in to_ngrams(text_1, ngram_size):
             ngram_block = ngram_index_2.get(ngram, [])
@@ -88,8 +85,6 @@ def ngram_blocker(table_1: List[Dict], table_2: List[Dict], options: Any):
 
 @attr.s(auto_attribs=True)
 class Options:
-    id_key_1: str
-    id_key_2: str
     key_1: str
     key_2: str
     ngram_size: int = 3
@@ -225,14 +220,13 @@ def index_by_ngrams(
     records: List[Dict],
     ngram_size: int,
     index_key: str,
-    id_key: str,
     tx_fn: Callable = default_collate,
 ) -> Dict[str, Set[str]]:
-    """Collect the IDs from `id_key` of each ngram from field `index_key`."""
+    """Collect the records by ngram for field `index_key`."""
     index: Dict[str, Set[str]] = defaultdict(set)
-    for record in records:
+    for id, record in enumerate(records):
         for ngram in to_ngrams(tx_fn(record[index_key]), ngram_size):
-            index[ngram].add(record[id_key])
+            index[ngram].add(id)
 
     return dict(index)
 
@@ -278,16 +272,12 @@ def inner_join(
     to large block sizes.
     """
     options = options.__dict__
-    id_key_1 = options['id_key_1']
-    id_key_2 = options['id_key_2']
     exclude_fn = options['exclude_fn']
     compare_fn = options['compare_fn']
     blocker_fn = options['blocker_fn']
     show_progress = options['show_progress']
 
     total = 0
-    id_index_1 = {x[id_key_1]: x for x in table_1}
-    id_index_2 = {x[id_key_2]: x for x in table_2}
     blocks = blocker_fn(table_1, table_2, options)
 
     last_time = time.clock()
@@ -295,7 +285,7 @@ def inner_join(
     matched_ids = set()  # type: Set[Tuple[str, str]]
     for i, block in enumerate(blocks):
         id_1, block_ids = block
-        record_1 = id_index_1[id_1]
+        record_1 = table_1[id_1]
         for id_2 in block_ids:
             # If already matched, don't compare again. The same
             # pairs may appear across multiple blocks.
@@ -303,7 +293,7 @@ def inner_join(
                 continue
 
             total += 1
-            record_2 = id_index_2[id_2]
+            record_2 = table_2[id_2]
             if exclude_fn(record_1, record_2):
                 continue
 
@@ -311,7 +301,11 @@ def inner_join(
             last_result = results[-1]
             if last_result['pass'] is True:
                 score = last_result['score']
-                match = {'score': score, 'record_1': record_1, 'record_2': record_2}
+                match = {
+                    'score': score,
+                    '_id_1': id_1, 'record_1': record_1,
+                    '_id_2': id_2, 'record_2': record_2
+                }
                 match['meta'] = {'match_stages': results}
                 matches.append(match)
                 matched_ids.add((id_1, id_2))
@@ -328,14 +322,14 @@ def inner_join(
     return matches
 
 
-def filter_multiples(id_key: str, matches: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def filter_multiples(matches: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Returns the list of matches where a left table ID has
     multiple matches in the right table.
     """
     counts: Dict[str, int] = defaultdict(lambda: 0)
     for match in matches:
-        id = match["record_1"][id_key]
-        counts[id] += 1
+        id_1 = match["_id_1"]
+        counts[id_1] += 1
 
     multiples_ids = set(id for id, count in counts.items() if count > 1)
     if len(multiples_ids) == 0:
@@ -343,7 +337,7 @@ def filter_multiples(id_key: str, matches: List[Dict[str, Any]]) -> List[Dict[st
 
     multiples_matches = []
     for match in matches:
-        if match["record_1"][id_key] in multiples_ids:
+        if match["_id_1"] in multiples_ids:
             multiples_matches.append(match)
 
     return multiples_matches

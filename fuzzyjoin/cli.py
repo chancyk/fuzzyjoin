@@ -6,19 +6,19 @@ import traceback
 
 import click
 
-from . import io, utils, compare
+from . import io, utils, compare as c
 
 # flake8: noqa
 
 
 @click.command()
-@click.option("-i", "--ids", nargs=2, required=True, help="<left_id> <right_id>")
 @click.option("-f", "--fields", nargs=2, required=True, help="<left_field> <right_field>")
 @click.option("-t", "--threshold", default=0.7, show_default=True, type=click.FLOAT, help="Only return matches above this score.")
 @click.option("-o", "--output", help="File to write the matches to.")
-@click.option("--multiples", help="File to left IDs with multiple matches.")
+@click.option("--multiples", "multiples_file", help="File for left IDs with multiple matches.")
 @click.option("--exclude", help="An importable function to exclude matches: fn(left_record, right_record)")
 @click.option("--collate", help="An importable function to collate the `fields`: fn(text)")
+@click.option("--compare", help="An importable function to compare: fn(left_record, right_record)")
 @click.option("--numbers-exact", is_flag=True, help="Numbers and order must match exactly.")
 @click.option("--numbers-permutation", is_flag=True, help="Numbers must match but may be out of order.")
 @click.option("--numbers-subset", is_flag=True, help="Numbers must be a subset.")
@@ -29,13 +29,13 @@ from . import io, utils, compare
 @click.argument("left_csv", required=True)
 @click.argument("right_csv", required=True)
 def main(
-    ids,
     fields,
     threshold,
     output,
-    multiples,
+    multiples_file,
     exclude,
     collate,
+    compare,
     numbers_exact,
     numbers_permutation,
     numbers_subset,
@@ -50,17 +50,16 @@ def main(
     try:
         collate_fn = utils.import_function(collate) if collate else None
         exclude_fn = utils.import_function(exclude) if exclude else None
+        compare_fn = utils.import_function(compare) if compare else None
         key_1, key_2 = fields
-        id_key_1, id_key_2 = ids
-        options = compare.Options(
+        options = c.Options(
             key_1=key_1,
             key_2=key_2,
-            id_key_1=id_key_1,
-            id_key_2=id_key_2,
             threshold=threshold,
             ngram_size=ngram_size,
-            collate_fn=collate_fn or compare.identity,
-            exclude_fn=exclude_fn or compare.compare_two_always_false,
+            collate_fn=collate_fn or c.identity,
+            exclude_fn=exclude_fn or c.compare_two_always_false,
+            compare_fn=compare_fn or c.default_compare,
             show_progress=not no_progress,
             numbers_exact=numbers_exact,
             numbers_permutation=numbers_permutation,
@@ -75,13 +74,13 @@ def main(
             utils.prompt_if_exists(output)
 
         io.write_matches(matches, output)
-        if multiples:
-            multiples_matches = compare.filter_multiples(id_key_1, matches)
+        if multiples_file:
+            multiples_matches = c.filter_multiples(matches)
             if multiples_matches:
                 if not yes:
-                    utils.prompt_if_exists(multiples)
-                io.write_matches(multiples_matches, multiples)
-                print("[INFO] Wrote multiples: %s" % os.path.abspath(multiples))
+                    utils.prompt_if_exists(multiples_file)
+                io.write_matches(multiples_matches, multiples_file)
+                print("[INFO] Wrote multiples: %s" % os.path.abspath(multiples_file))
 
         print("[INFO] Wrote: %s" % os.path.abspath(output))
     except Exception as e:
