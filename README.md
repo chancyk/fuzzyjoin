@@ -108,6 +108,11 @@ TODO
 
 History
 =======
+0.5.1 (2019-04-15)
+------------------
+* Update usage docs.
+* Rename key_* params to field_* for consistency.
+
 0.5.0 (2019-04-15)
 ------------------
 * Removed ID field requirement.
