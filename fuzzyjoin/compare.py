@@ -221,9 +221,9 @@ def index_by_ngrams(
     ngram_size: int,
     index_key: str,
     tx_fn: Callable = default_collate,
-) -> Dict[str, Set[str]]:
+) -> Dict[str, Set[int]]:
     """Collect the records by ngram for field `index_key`."""
-    index: Dict[str, Set[str]] = defaultdict(set)
+    index: Dict[str, Set[int]] = defaultdict(set)
     for id, record in enumerate(records):
         for ngram in to_ngrams(tx_fn(record[index_key]), ngram_size):
             index[ngram].add(id)
