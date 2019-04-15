@@ -28,13 +28,16 @@ def identity(x):
     return x
 
 
-def compare_two_always_false(x, y):
+def default_exclude(left, right, options):
+    """A custom function should return True to exclude
+    the record pair and short circuit further comparison.
+    """
     return False
 
 
 def default_compare(record_1: List[Dict], record_2: List[Dict], options: Any) -> List[Dict]:
-    key_1 = options['key_1']
-    key_2 = options['key_2']
+    field_1 = options['field_1']
+    field_2 = options['field_2']
     collate_fn = options['collate_fn']
     comparisons = [
         compare_numbers_exact,
@@ -42,8 +45,8 @@ def default_compare(record_1: List[Dict], record_2: List[Dict], options: Any) ->
         compare_numbers_subset,
         compare_fuzzy
     ]
-    text_1 = record_1[key_1]
-    text_2 = record_2[key_2]
+    text_1 = record_1[field_1]
+    text_2 = record_2[field_2]
     if text_1 == text_2:
         return [{'pass': True, 'score': 1.0}]
 
@@ -63,19 +66,19 @@ def default_compare(record_1: List[Dict], record_2: List[Dict], options: Any) ->
 
 
 def ngram_blocker(table_1: List[Dict], table_2: List[Dict], options: Any):
-    key_1 = options['key_1']
-    key_2 = options['key_2']
+    field_1 = options['field_1']
+    field_2 = options['field_2']
     ngram_size = options['ngram_size']
     collate_fn = options['collate_fn']
 
     ngram_index_2 = index_by_ngrams(
         table_2, ngram_size,
-        index_key=key_2,
+        index_key=field_2,
         tx_fn=collate_fn
     )
     blocks = []
     for id_1, record_1 in enumerate(table_1):
-        text_1 = collate_fn(record_1[key_1])
+        text_1 = collate_fn(record_1[field_1])
         for ngram in to_ngrams(text_1, ngram_size):
             ngram_block = ngram_index_2.get(ngram, [])
             blocks.append((id_1, ngram_block))
@@ -85,8 +88,8 @@ def ngram_blocker(table_1: List[Dict], table_2: List[Dict], options: Any):
 
 @attr.s(auto_attribs=True)
 class Options:
-    key_1: str
-    key_2: str
+    field_1: str
+    field_2: str
     ngram_size: int = 3
     threshold: float = 0.7
     numbers_exact: bool = False
@@ -94,7 +97,7 @@ class Options:
     numbers_subset: bool = False
     fuzzy_fn: Callable = levenshtein
     collate_fn: Callable = default_collate
-    exclude_fn: Callable = compare_two_always_false
+    exclude_fn: Callable = default_exclude
     compare_fn: Callable = default_compare
     blocker_fn: Callable = ngram_blocker
     show_progress: bool = True
@@ -109,14 +112,14 @@ class Options:
 def compare_fuzzy(
     record_1: List[Dict], record_2: List[Dict], options: Options
 ) -> Dict[str, Any]:
-    key_1 = options['key_1']
-    key_2 = options['key_2']
+    field_1 = options['field_1']
+    field_2 = options['field_2']
     threshold = options['threshold']
     fuzzy_fn = options['fuzzy_fn']
 
     output: Dict[str, Any] = {}
-    text_1 = record_1[key_1]
-    text_2 = record_2[key_2]
+    text_1 = record_1[field_1]
+    text_2 = record_2[field_2]
     t1_len = len(text_1)
     t2_len = len(text_2)
     larger = t1_len if t1_len >= t2_len else t2_len
@@ -144,14 +147,14 @@ def compare_numbers_exact(
 ) -> Dict[str, Any]:
     """Numbers must appear in same order but without leading zeroes."""
     meta = {'function': 'compare_numbers_exact'}
-    key_1 = options['key_1']
-    key_2 = options['key_2']
+    field_1 = options['field_1']
+    field_2 = options['field_2']
     if not options['numbers_exact']:
         output = {'pass': True, 'meta': meta}
         return output
 
-    text_1 = record_1[key_1]
-    text_2 = record_2[key_2]
+    text_1 = record_1[field_1]
+    text_2 = record_2[field_2]
     # Strip leading zeroes from all numbers.
     numbers_1 = [int(x) for x in RE_NUMBERS.findall(text_1)]
     numbers_2 = [int(x) for x in RE_NUMBERS.findall(text_2)]
@@ -169,14 +172,14 @@ def compare_numbers_permutation(
 ) -> Dict[str, Any]:
     """Numbers match without leading zeroes and independent of order."""
     meta = {'function': 'compare_numbers_permutation'}
-    key_1 = options['key_1']
-    key_2 = options['key_2']
+    field_1 = options['field_1']
+    field_2 = options['field_2']
     if not options['numbers_permutation']:
         output = {'pass': True, 'meta': meta}
         return output
 
-    text_1 = record_1[key_1]
-    text_2 = record_2[key_2]
+    text_1 = record_1[field_1]
+    text_2 = record_2[field_2]
     # Strip leading zeroes from all numbers.
     numbers_1 = sorted([int(x) for x in RE_NUMBERS.findall(text_1)])
     numbers_2 = sorted([int(x) for x in RE_NUMBERS.findall(text_2)])
@@ -196,14 +199,14 @@ def compare_numbers_subset(
     without leading zeroes.
     """
     meta = {'function': 'compare_numbers_subset'}
-    key_1 = options['key_1']
-    key_2 = options['key_2']
+    field_1 = options['field_1']
+    field_2 = options['field_2']
     if not options['numbers_subset']:
         output = {'pass': True, 'meta': meta}
         return output
 
-    text_1 = record_1[key_1]
-    text_2 = record_2[key_2]
+    text_1 = record_1[field_1]
+    text_2 = record_2[field_2]
     # Strip leading zeroes from all numbers.
     numbers_1 = set([int(x) for x in RE_NUMBERS.findall(text_1)])
     numbers_2 = set([int(x) for x in RE_NUMBERS.findall(text_2)])
@@ -294,7 +297,7 @@ def inner_join(
 
             total += 1
             record_2 = table_2[id_2]
-            if exclude_fn(record_1, record_2):
+            if exclude_fn(record_1, record_2, options):
                 continue
 
             results = compare_fn(record_1, record_2, options)

@@ -6,8 +6,8 @@ from fuzzyjoin import compare
 @pytest.fixture
 def options():
     return compare.Options(
-        key_1="text",
-        key_2="text"
+        field_1="text",
+        field_2="text"
     )
 
 

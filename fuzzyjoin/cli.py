@@ -6,7 +6,7 @@ import traceback
 
 import click
 
-from . import io, utils, compare as c
+from . import io, utils, compare as cmp, collate as cll
 
 # flake8: noqa
 
@@ -16,9 +16,9 @@ from . import io, utils, compare as c
 @click.option("-t", "--threshold", default=0.7, show_default=True, type=click.FLOAT, help="Only return matches above this score.")
 @click.option("-o", "--output", help="File to write the matches to.")
 @click.option("--multiples", "multiples_file", help="File for left IDs with multiple matches.")
-@click.option("--exclude", help="An importable function to exclude matches: fn(left_record, right_record)")
-@click.option("--collate", help="An importable function to collate the `fields`: fn(text)")
-@click.option("--compare", help="An importable function to compare: fn(left_record, right_record)")
+@click.option("--exclude", help="Function used to exclude records. See: <fuzzyjoin.compare.default_exclude>")
+@click.option("--collate", help="Function used to collate <fields>. See: <fuzzyjoin.collate.default_collate>")
+@click.option("--compare", help="Function used to compare records. See: <fuzzyjoin.compare.default_compare>")
 @click.option("--numbers-exact", is_flag=True, help="Numbers and order must match exactly.")
 @click.option("--numbers-permutation", is_flag=True, help="Numbers must match but may be out of order.")
 @click.option("--numbers-subset", is_flag=True, help="Numbers must be a subset.")
@@ -46,20 +46,20 @@ def main(
     left_csv,
     right_csv,
 ):
-    """Fuzzy join <left_csv> and <right_csv> by <left_field> and <right_field>."""
+    """Inner join <left_csv> and <right_csv> by a fuzzy comparison of <left_field> and <right_field>."""
     try:
         collate_fn = utils.import_function(collate) if collate else None
         exclude_fn = utils.import_function(exclude) if exclude else None
         compare_fn = utils.import_function(compare) if compare else None
-        key_1, key_2 = fields
-        options = c.Options(
-            key_1=key_1,
-            key_2=key_2,
+        field_1, field_2 = fields
+        options = cmp.Options(
+            field_1=field_1,
+            field_2=field_2,
             threshold=threshold,
             ngram_size=ngram_size,
-            collate_fn=collate_fn or c.identity,
-            exclude_fn=exclude_fn or c.compare_two_always_false,
-            compare_fn=compare_fn or c.default_compare,
+            collate_fn=collate_fn or cll.default_collate,
+            exclude_fn=exclude_fn or cmp.default_exclude,
+            compare_fn=compare_fn or cmp.default_compare,
             show_progress=not no_progress,
             numbers_exact=numbers_exact,
             numbers_permutation=numbers_permutation,
@@ -75,7 +75,7 @@ def main(
 
         io.write_matches(matches, output)
         if multiples_file:
-            multiples_matches = c.filter_multiples(matches)
+            multiples_matches = cmp.filter_multiples(matches)
             if multiples_matches:
                 if not yes:
                     utils.prompt_if_exists(multiples_file)
