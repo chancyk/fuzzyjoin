@@ -7,9 +7,7 @@ from fuzzyjoin import compare
 def options():
     return compare.Options(
         key_1="text",
-        key_2="text",
-        id_key_1="id",
-        id_key_2="id"
+        key_2="text"
     )
 
 
@@ -36,7 +34,7 @@ def test_default_compare(options):
 def test_ngrams():
     records = demo_records()
     index = compare.index_by_ngrams(
-        records, index_key="text", id_key="id", ngram_size=4
+        records, index_key="text", ngram_size=4
     )
     # Note that the ngram smaller than `ngram_size` are not
     # included in the index.
@@ -49,7 +47,7 @@ def test_ngrams():
     assert len(index) == 6
     id_counts = [len(x) for x in index.values()]
     assert sum(id_counts) == 7
-    assert index["hell"] == {1, 2}
+    assert index["hell"] == {0, 1}
 
 
 def test_inner_join(options):
@@ -104,7 +102,7 @@ def test_inner_join_multiples(options):
         table_2=records_2,
         options=options
     )
-    multiples = compare.filter_multiples(id_key="id", matches=matches)
+    multiples = compare.filter_multiples(matches)
     assert len(multiples) == 4
 
 
