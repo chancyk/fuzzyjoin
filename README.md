@@ -89,12 +89,15 @@ CLI Usage
 API Usage
 ---------
 ```python
-from fuzzyjoin.io import inner_join_csv_files
+from fuzzyjoin import io
 
+# Specify which field to use from the left and right CSV files.
 options = Options(
-
+    field_1='name',
+    field_2='full_name'
 )
-inner_join_csv_files('left.csv', 'right.csv', )
+matches = io.inner_join_csv_files('left.csv', 'right.csv', options)
+io.write_matches(matches, output_file='matches.csv')
 ```
 
 TODO
