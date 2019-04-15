@@ -111,6 +111,10 @@ TODO
 
 History
 =======
+0.5.2 (2019-04-15)
+------------------
+* Fix API Usage history docs in README.
+
 0.5.1 (2019-04-15)
 ------------------
 * Update usage docs.
